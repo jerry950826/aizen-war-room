@@ -22,7 +22,7 @@ const services: Array<{
     description: "假單申請、簽核進度與年度假別餘額",
     metric: "06",
     metricLabel: "待簽核",
-    color: "#5968d8",
+    color: "#0073df",
     icon: "休",
   },
   {
@@ -32,7 +32,7 @@ const services: Array<{
     description: "費用申請、單據核銷與付款進度追蹤",
     metric: "12",
     metricLabel: "處理中",
-    color: "#cf713e",
+    color: "#ff0000",
     icon: "款",
   },
   {
@@ -42,7 +42,7 @@ const services: Array<{
     description: "講師排程、授課時數與合作狀態總覽",
     metric: "28",
     metricLabel: "本月場次",
-    color: "#2e8b78",
+    color: "#1685c5",
     icon: "講",
   },
 ];
