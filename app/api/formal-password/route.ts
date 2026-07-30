@@ -1,11 +1,18 @@
+import { env } from "cloudflare:workers";
+
 const FORMAL_PASSWORD_URL = "https://leaveflow-tw.jerry950826.chatgpt.site/api/password";
 
 export async function PUT(request: Request) {
   const authorization = request.headers.get("Authorization") ?? "";
+  const bypassToken = (env as unknown as { FORMAL_SITE_BYPASS_TOKEN?: string }).FORMAL_SITE_BYPASS_TOKEN ?? "";
   const body = await request.text();
   const response = await fetch(FORMAL_PASSWORD_URL, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: authorization },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: authorization,
+      ...(bypassToken ? { "OAI-Sites-Authorization": `Bearer ${bypassToken}` } : {}),
+    },
     body,
   });
 
