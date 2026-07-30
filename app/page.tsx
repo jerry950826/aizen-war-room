@@ -64,6 +64,14 @@ const adminEmails: Record<string, string> = {
   "jerrychang@ai-zens.com": "jerry",
 };
 
+const userProfiles: Record<string, { english: string; name: string; department: string; title: string }> = {
+  maggie: { english: "Maggie", name: "房美華", department: "總經理室", title: "總經理" },
+  rita: { english: "Rita", name: "謝雨如", department: "企劃部", title: "企劃兼行政" },
+  jerry: { english: "Jerry", name: "張廷", department: "技術部", title: "前端工程師" },
+  emily: { english: "Emily", name: "張芷瑄", department: "技術部", title: "前端工程師" },
+  james: { english: "James", name: "簡侑俊", department: "技術部", title: "後端工程師" },
+};
+
 const initialMembers: Member[] = [
   { email: "maggiefang@ai-zens.com", name: "Maggie 房美華", role: "管理員", active: true },
   { email: "ritahsieh@ai-zens.com", name: "Rita 謝雨如", role: "管理員", active: true },
@@ -81,6 +89,11 @@ export default function Home() {
   const [token, setToken] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
@@ -91,6 +104,38 @@ export default function Home() {
     () => services.filter((service) => permissions[user]?.[service.id] ?? true),
     [permissions, user],
   );
+  const profile = userProfiles[user] ?? {
+    english: user[0].toUpperCase() + user.slice(1),
+    name: members.find((member) => member.email === email)?.name ?? user,
+    department: "Aizen",
+    title: "一般成員",
+  };
+
+  const changePassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    if (newPassword.length < 8) return setPasswordError("新密碼至少需要 8 個字元。");
+    if (newPassword !== confirmPassword) return setPasswordError("兩次輸入的新密碼不一致。");
+    setPasswordBusy(true);
+    try {
+      const response = await fetch("/api/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const result = await response.json().catch(() => null) as { error?: string } | null;
+      if (!response.ok) return setPasswordError(result?.error || "密碼更新失敗。");
+      setPassword(newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      notify("密碼已更新，下次登入請使用新密碼");
+    } catch {
+      setPasswordError("目前無法更新密碼，請稍後再試。");
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
 
   const notify = (message: string) => {
     setToast(message);
@@ -159,7 +204,7 @@ export default function Home() {
       form.remove();
       return;
     }
-    window.open(service.url, "_blank", "noopener,noreferrer");
+    window.open(`/api/launch?service=${service.id}`, "_blank", "noopener,noreferrer");
   };
 
   const addMember = async (event: FormEvent<HTMLFormElement>) => {
@@ -241,7 +286,7 @@ export default function Home() {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <button className="side-brand" onClick={() => setView("dashboard")}><span className="brand-mark">A</span><b>AIZEN</b></button>
+        <button className="side-brand" onClick={() => setView("dashboard")}><img className="brand-logo" src="/aizen-mark.png" alt="" /><b>AIZEN</b></button>
         <nav aria-label="主選單">
           <p>工作台</p>
           <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}><span>▦</span>戰情室總覽</button>
@@ -252,8 +297,8 @@ export default function Home() {
         </nav>
         <div className="sidebar-bottom">
           <div className="user-chip">
-            <div className="avatar">{user[0].toUpperCase()}</div>
-            <div><b>{user[0].toUpperCase() + user.slice(1)}</b><span>系統管理員</span></div>
+            <div className="avatar">{profile.name[0]}</div>
+            <div><b>{profile.english}・{profile.name}</b><span>{profile.department}・{profile.title}</span></div>
           </div>
           <button className="logout" onClick={() => setLoggedIn(false)} aria-label="登出">↪</button>
         </div>
@@ -273,7 +318,7 @@ export default function Home() {
         {view === "dashboard" && (
           <div className="page dashboard">
             <div className="page-heading">
-              <div><p className="kicker">COMMAND CENTER</p><h1>早安，{user[0].toUpperCase() + user.slice(1)}</h1><p>今天也一起把重要的事，穩穩推進。</p></div>
+              <div><p className="kicker">COMMAND CENTER</p><h1>早安，{profile.english}</h1><p>今天也一起把重要的事，穩穩推進。</p></div>
               <div className="status-pill"><span className="pulse-dot" />所有系統運作正常</div>
             </div>
 
@@ -307,16 +352,15 @@ export default function Home() {
         {view === "password" && (
           <div className="page narrow-page">
             <div className="page-heading"><div><p className="kicker">ACCOUNT SECURITY</p><h1>修改登入密碼</h1><p>定期更新密碼，讓帳號維持安全。</p></div></div>
-            <section className="settings-card">
+            <form className="settings-card" onSubmit={changePassword}>
               <div className="settings-icon">⌁</div>
-              <div className="form-copy"><h2>前往正式帳號設定</h2><p>密碼由正式行政系統統一管理。登入正式系統後，可在「帳號設定」安全更新共用密碼。</p></div>
-              <div className="account-link-panel">
-                <span>目前帳號</span>
-                <b>{email}</b>
-                <button className="primary-button" type="button" onClick={() => window.open("https://leaveflow-tw.jerry950826.chatgpt.site/leave", "_blank", "noopener,noreferrer")}>開啟正式帳號設定 ↗</button>
-              </div>
-              <div className="form-actions"><button type="button" className="secondary-button" onClick={() => setView("dashboard")}>返回戰情室</button></div>
-            </section>
+              <div className="form-copy"><h2>{profile.english}・{profile.name}</h2><p>{profile.department}・{profile.title}　／　{email}</p></div>
+              {passwordError && <div className="password-error" role="alert">{passwordError}</div>}
+              <label>目前密碼<input type="password" required autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>
+              <label>新密碼<input type="password" required minLength={8} autoComplete="new-password" placeholder="至少 8 個字元" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+              <label>確認新密碼<input type="password" required minLength={8} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></label>
+              <div className="form-actions"><button type="button" className="secondary-button" onClick={() => setView("dashboard")}>取消</button><button className="primary-button save-button" disabled={passwordBusy}>{passwordBusy ? "更新中…" : "儲存新密碼"}</button></div>
+            </form>
           </div>
         )}
 

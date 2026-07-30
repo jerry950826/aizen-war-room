@@ -12,6 +12,9 @@ export async function POST(request: Request) {
   }
   const token = crypto.randomUUID();
   await db.prepare("INSERT INTO sessions (token,email,expires_at) VALUES (?,?,?)")
-    .bind(token, member.email, Date.now() + 12 * 60 * 60 * 1000).run();
-  return Response.json({ token, email: member.email, name: member.name, role: member.role });
+    .bind(token, member.email, Date.now() + 24 * 60 * 60 * 1000).run();
+  return Response.json(
+    { token, email: member.email, name: member.name, role: member.role },
+    { headers: { "Set-Cookie": `war_room_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400` } },
+  );
 }

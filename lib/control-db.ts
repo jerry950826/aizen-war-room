@@ -32,9 +32,28 @@ export async function sha256(value: string) {
   return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+export function base64Url(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+export async function signHandoff(value: string, secret: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  return base64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))));
+}
+
 export async function requireSession(request: Request, admin = false) {
   const db = await ensureControlDb();
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const bearer = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const cookie = request.headers.get("Cookie")?.match(/(?:^|;\s*)war_room_session=([^;]+)/)?.[1] ?? "";
+  const token = bearer || cookie;
   const session = await db.prepare(
     "SELECT s.email,m.role,m.active FROM sessions s JOIN members m ON m.email=s.email WHERE s.token=? AND s.expires_at>?",
   ).bind(token, Date.now()).first<{ email: string; role: string; active: number }>();

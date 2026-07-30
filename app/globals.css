@@ -22,6 +22,7 @@ button { color: inherit; }
 .login-brand::before { content: ""; position: absolute; width: 560px; height: 560px; right: -300px; bottom: -130px; border: 1px solid rgba(255,255,255,.11); border-radius: 50%; box-shadow: 0 0 0 80px rgba(255,255,255,.025), 0 0 0 160px rgba(255,255,255,.02); }
 .brand-mark { position: relative; width: 38px; height: 38px; display: grid; place-items: center; color: #0073df; background: white; border-radius: 10px; font-weight: 900; font-size: 20px; box-shadow: 0 7px 16px rgba(0,67,128,.24); }
 .brand-mark::after { content: ""; position: absolute; width: 15px; height: 4px; border-radius: 4px; background: var(--red); top: 7px; right: 5px; transform: rotate(-18deg); }
+.brand-logo { width: 38px; height: 38px; border-radius: 10px; object-fit: cover; background: white; box-shadow: 0 7px 16px rgba(0,67,128,.24); }
 .brand-mark.large { position: absolute; top: 52px; left: 64px; background: white; color: var(--purple-dark); }
 .brand-copy { position: relative; z-index: 1; max-width: 430px; margin-top: auto; margin-bottom: auto; }
 .brand-copy > span { font-size: 12px; font-weight: 800; letter-spacing: .2em; color: #d8edff; }
@@ -115,6 +116,7 @@ button { color: inherit; }
 .settings-card > label { grid-column: 2; font-size: 12px; font-weight: 700; margin: 0 0 18px; }
 .settings-card input { display: block; width: 100%; height: 49px; margin-top: 8px; border: 1px solid #dfe1e8; border-radius: 8px; padding: 0 14px; outline: 0; }
 .settings-card input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(0,115,223,.09); }
+.password-error { grid-column: 2; margin: 0 0 18px; padding: 11px 13px; border: 1px solid #f2b8b5; border-radius: 9px; background: #fff3f2; color: #a12b24; font-size: 12px; }
 .account-link-panel { grid-column: 2; margin: 4px 0 24px; padding: 18px; border: 1px solid #dce7f0; border-radius: 10px; background: #f7fbff; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 5px 18px; }
 .account-link-panel span { color: #8993a2; font-size: 9px; }
 .account-link-panel b { grid-column: 1; font-size: 12px; }
