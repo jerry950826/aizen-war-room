@@ -15,6 +15,7 @@ const services: Array<{
   metricLabel: string;
   color: string;
   icon: string;
+  url: string;
 }> = [
   {
     id: "leave",
@@ -25,6 +26,7 @@ const services: Array<{
     metricLabel: "待簽核",
     color: "#0073df",
     icon: "休",
+    url: "https://leaveflow-tw.jerry950826.chatgpt.site/leave",
   },
   {
     id: "claims",
@@ -35,6 +37,7 @@ const services: Array<{
     metricLabel: "處理中",
     color: "#ff0000",
     icon: "款",
+    url: "https://leaveflow-tw.jerry950826.chatgpt.site/claims",
   },
   {
     id: "instructors",
@@ -45,6 +48,7 @@ const services: Array<{
     metricLabel: "本月場次",
     color: "#1685c5",
     icon: "講",
+    url: "https://aizen-instructor-dashboard.jerry950826.chatgpt.site",
   },
 ];
 
@@ -55,24 +59,30 @@ const initialPermissions: Record<string, Record<ServiceId, boolean>> = {
 };
 
 const adminEmails: Record<string, string> = {
-  "maggie@aizen.com": "maggie",
-  "rita@aizen.com": "rita",
-  "jerry@aizen.com": "jerry",
+  "maggiefang@ai-zens.com": "maggie",
+  "ritahsieh@ai-zens.com": "rita",
+  "jerrychang@ai-zens.com": "jerry",
 };
 
 const initialMembers: Member[] = [
-  { email: "maggie@aizen.com", name: "Maggie", role: "管理員", active: true },
-  { email: "rita@aizen.com", name: "Rita", role: "管理員", active: true },
-  { email: "jerry@aizen.com", name: "Jerry", role: "管理員", active: true },
-  { email: "alice@aizen.com", name: "Alice Chen", role: "一般成員", active: true },
-  { email: "kevin@aizen.com", name: "Kevin Lin", role: "一般成員", active: false },
+  { email: "maggiefang@ai-zens.com", name: "Maggie 房美華", role: "管理員", active: true },
+  { email: "ritahsieh@ai-zens.com", name: "Rita 謝雨如", role: "管理員", active: true },
+  { email: "jerrychang@ai-zens.com", name: "Jerry 張廷", role: "管理員", active: true },
+  { email: "emilychang@ai-zens.com", name: "Emily 張芷瑄", role: "一般成員", active: true },
+  { email: "jameschien@ai-zens.com", name: "James 簡侑俊", role: "一般成員", active: true },
 ];
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [user, setUser] = useState("maggie");
-  const [email, setEmail] = useState("maggie@aizen.com");
+  const [email, setEmail] = useState("maggiefang@ai-zens.com");
+  const [password, setPassword] = useState("Ab123456");
+  const [formalToken, setFormalToken] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
@@ -89,7 +99,7 @@ export default function Home() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
-  const login = (event: FormEvent<HTMLFormElement>) => {
+  const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     const member = members.find((item) => item.email === normalizedEmail);
@@ -97,10 +107,70 @@ export default function Home() {
       notify("此信箱尚未取得存取權，請聯絡管理員");
       return;
     }
-    setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
-    setLoggedIn(true);
-    setView("dashboard");
-    notify(`歡迎回來，${member.name}`);
+    setLoginBusy(true);
+    try {
+      const response = await fetch("/api/formal-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
+      if (!response.ok) {
+        notify("正式帳號或密碼不正確");
+        return;
+      }
+      const data = await response.json() as { token: string };
+      setFormalToken(data.token);
+      setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
+      setLoggedIn(true);
+      setView("dashboard");
+      notify(`歡迎回來，${member.name}`);
+    } finally {
+      setLoginBusy(false);
+    }
+  };
+
+  const changeFormalPassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (newPassword !== confirmPassword) {
+      notify("兩次輸入的新密碼不一致");
+      return;
+    }
+    const response = await fetch("/api/formal-password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${formalToken}` },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    if (!response.ok) {
+      const data = await response.json() as { error?: string };
+      notify(data.error ?? "正式密碼更新失敗");
+      return;
+    }
+    setPassword(newPassword);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    notify("正式系統密碼已更新");
+  };
+
+  const openService = (service: (typeof services)[number]) => {
+    if (service.id === "instructors") {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "https://leaveflow-tw.jerry950826.chatgpt.site/api/dashboard-login";
+      form.target = "_blank";
+      for (const [name, value] of [["email", email], ["password", password]]) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+      return;
+    }
+    window.open(service.url, "_blank", "noopener,noreferrer");
   };
 
   const addMember = (event: FormEvent<HTMLFormElement>) => {
@@ -147,16 +217,16 @@ export default function Home() {
               <span>◎</span>
               <input id="account" type="email" list="demo-emails" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@aizen.com" required />
               <datalist id="demo-emails">
-                <option value="maggie@aizen.com" />
-                <option value="rita@aizen.com" />
-                <option value="jerry@aizen.com" />
+                <option value="maggiefang@ai-zens.com" />
+                <option value="ritahsieh@ai-zens.com" />
+                <option value="jerrychang@ai-zens.com" />
               </datalist>
             </div>
 
             <label htmlFor="password">密碼</label>
             <div className="field">
               <span>⌑</span>
-              <input id="password" type={showPassword ? "text" : "password"} defaultValue="aizen2026" />
+              <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} />
               <button type="button" className="eye" onClick={() => setShowPassword(!showPassword)} aria-label="顯示或隱藏密碼">
                 {showPassword ? "隱藏" : "顯示"}
               </button>
@@ -167,8 +237,8 @@ export default function Home() {
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 
-            <button className="primary-button" type="submit">進入戰情室 <span>→</span></button>
-            <p className="demo-hint">測試信箱：maggie@aizen.com、rita@aizen.com、jerry@aizen.com</p>
+            <button className="primary-button" type="submit" disabled={loginBusy}>{loginBusy ? "驗證正式帳號中…" : "進入戰情室"} <span>→</span></button>
+            <p className="demo-hint">使用正式公司信箱與密碼；初次登入預設密碼為 Ab123456</p>
           </form>
           <footer>© 2026 Aizen. Internal use only.</footer>
         </section>
@@ -234,7 +304,7 @@ export default function Home() {
                   </div>
                   <div className="service-footer">
                     <div><b>{service.metric}</b><span>{service.metricLabel}</span></div>
-                    <button onClick={() => notify(`${service.title}為測試入口，尚未連接正式系統`)}>開啟系統 <span>↗</span></button>
+                    <button onClick={() => openService(service)}>開啟正式系統 <span>↗</span></button>
                   </div>
                 </article>
               ))}
@@ -245,12 +315,12 @@ export default function Home() {
         {view === "password" && (
           <div className="page narrow-page">
             <div className="page-heading"><div><p className="kicker">ACCOUNT SECURITY</p><h1>修改登入密碼</h1><p>定期更新密碼，讓帳號維持安全。</p></div></div>
-            <form className="settings-card" onSubmit={(e) => { e.preventDefault(); notify("測試版已模擬更新密碼"); }}>
+            <form className="settings-card" onSubmit={changeFormalPassword}>
               <div className="settings-icon">⌁</div>
-              <div className="form-copy"><h2>設定新密碼</h2><p>新密碼至少需要 8 個字元，並建議包含英文與數字。</p></div>
-              <label>目前密碼<input type="password" placeholder="輸入目前密碼" required /></label>
-              <label>新密碼<input type="password" placeholder="輸入新密碼" minLength={8} required /></label>
-              <label>確認新密碼<input type="password" placeholder="再次輸入新密碼" minLength={8} required /></label>
+              <div className="form-copy"><h2>設定正式系統新密碼</h2><p>儲存後會同步更新請假、請款與講師看板共用的正式登入密碼。</p></div>
+              <label>目前密碼<input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="輸入目前密碼" required /></label>
+              <label>新密碼<input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="輸入新密碼" minLength={8} required /></label>
+              <label>確認新密碼<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="再次輸入新密碼" minLength={8} required /></label>
               <div className="form-actions"><button type="button" className="secondary-button" onClick={() => setView("dashboard")}>取消</button><button className="primary-button">儲存新密碼</button></div>
             </form>
           </div>
@@ -290,15 +360,15 @@ export default function Home() {
         {view === "people" && (
           <div className="page">
             <div className="page-heading">
-              <div><p className="kicker">MEMBER ACCESS</p><h1>人員存取管理</h1><p>Maggie、Rita、Jerry 可管理哪些信箱能登入戰情室。</p></div>
+              <div><p className="kicker">MEMBER ACCESS</p><h1>人員存取管理</h1><p>Maggie、Rita、Jerry 可管理哪些正式公司帳號能進入戰情室。</p></div>
               <span className="member-total">{members.filter((member) => member.active).length} 位可登入</span>
             </div>
             <section className="people-layout">
               <form className="invite-card" onSubmit={addMember}>
                 <span className="invite-icon">＋</span>
-                <div><h2>新增可存取人員</h2><p>輸入公司信箱，加入後即可使用該信箱登入。</p></div>
+                <div><h2>新增可存取人員</h2><p>輸入已存在於正式系統的公司信箱，加入後即可登入戰情室。</p></div>
                 <label htmlFor="new-member-email">公司信箱</label>
-                <input id="new-member-email" type="email" value={newMemberEmail} onChange={(event) => setNewMemberEmail(event.target.value)} placeholder="name@aizen.com" required />
+                <input id="new-member-email" type="email" value={newMemberEmail} onChange={(event) => setNewMemberEmail(event.target.value)} placeholder="name@ai-zens.com" required />
                 <button className="primary-button" type="submit">加入允許名單</button>
               </form>
 
