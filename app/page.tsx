@@ -62,6 +62,8 @@ const adminEmails: Record<string, string> = {
   "maggiefang@ai-zens.com": "maggie",
   "ritahsieh@ai-zens.com": "rita",
   "jerrychang@ai-zens.com": "jerry",
+  "emilychang@ai-zens.com": "emily",
+  "jameschien@ai-zens.com": "james",
 };
 
 const userProfiles: Record<string, { english: string; name: string; department: string; title: string }> = {
@@ -110,6 +112,7 @@ export default function Home() {
     department: "Aizen",
     title: "一般成員",
   };
+  const isAdmin = ["maggie", "rita", "jerry"].includes(user);
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -292,13 +295,13 @@ export default function Home() {
           <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}><span>▦</span>戰情室總覽</button>
           <p>帳號設定</p>
           <button className={view === "password" ? "active" : ""} onClick={() => setView("password")}><span>⌁</span>修改登入密碼</button>
-          <button className={view === "permissions" ? "active" : ""} onClick={() => setView("permissions")}><span>♙</span>頁面權限管控</button>
-          <button className={view === "people" ? "active" : ""} onClick={() => setView("people")}><span>♧</span>人員存取管理</button>
+          {isAdmin && <button className={view === "permissions" ? "active" : ""} onClick={() => setView("permissions")}><span>♙</span>頁面權限管控</button>}
+          {isAdmin && <button className={view === "people" ? "active" : ""} onClick={() => setView("people")}><span>♧</span>人員存取管理</button>}
         </nav>
         <div className="sidebar-bottom">
           <div className="user-chip">
             <div className="avatar">{profile.name[0]}</div>
-            <div><b>{profile.english}・{profile.name}</b><span>{profile.department}・{profile.title}</span></div>
+            <div><b>{profile.name}</b><span>{profile.title}</span></div>
           </div>
           <button className="logout" onClick={() => setLoggedIn(false)} aria-label="登出">↪</button>
         </div>
