@@ -78,6 +78,8 @@ export default function Home() {
   const [user, setUser] = useState("maggie");
   const [email, setEmail] = useState("maggiefang@ai-zens.com");
   const [password, setPassword] = useState("Ab123456");
+  const [token, setToken] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
@@ -94,18 +96,41 @@ export default function Home() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
-  const login = (event: FormEvent<HTMLFormElement>) => {
+  const loadSharedState = async (accessToken: string) => {
+    const response = await fetch("/api/control-state", { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!response.ok) return;
+    const data = await response.json() as {
+      members: Array<Member & { active: number | boolean }>;
+      permissions: Array<{ email: string; leave: number | boolean; claims: number | boolean; instructors: number | boolean }>;
+    };
+    setMembers(data.members.map((member) => ({ ...member, active: Boolean(member.active) })));
+    setPermissions(Object.fromEntries(data.permissions.map((item) => [
+      adminEmails[item.email] ?? item.email.split("@")[0],
+      { leave: Boolean(item.leave), claims: Boolean(item.claims), instructors: Boolean(item.instructors) },
+    ])));
+  };
+
+  const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
-    const member = members.find((item) => item.email === normalizedEmail);
-    if (!member || !member.active) {
-      notify("此信箱尚未取得存取權，請聯絡管理員");
+    setLoginBusy(true);
+    const response = await fetch("/api/war-room-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalizedEmail, password }),
+    });
+    setLoginBusy(false);
+    if (!response.ok) {
+      notify("帳號或密碼不正確，或此信箱未開放");
       return;
     }
+    const data = await response.json() as { token: string; name: string };
+    setToken(data.token);
     setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
+    await loadSharedState(data.token);
     setLoggedIn(true);
     setView("dashboard");
-    notify(`歡迎回來，${member.name}`);
+    notify(`歡迎回來，${data.name}`);
   };
 
   const openService = (service: (typeof services)[number]) => {
@@ -129,7 +154,7 @@ export default function Home() {
     window.open(service.url, "_blank", "noopener,noreferrer");
   };
 
-  const addMember = (event: FormEvent<HTMLFormElement>) => {
+  const addMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = newMemberEmail.trim().toLowerCase();
     if (!normalizedEmail || members.some((member) => member.email === normalizedEmail)) {
@@ -137,10 +162,12 @@ export default function Home() {
       return;
     }
     const name = normalizedEmail.split("@")[0].replace(/[._-]/g, " ");
-    setMembers((current) => [
-      ...current,
-      { email: normalizedEmail, name: name.replace(/\b\w/g, (letter) => letter.toUpperCase()), role: "一般成員", active: true },
-    ]);
+    await fetch("/api/control-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: "add", email: normalizedEmail, name: name.replace(/\b\w/g, (letter) => letter.toUpperCase()) }),
+    });
+    await loadSharedState(token);
     setNewMemberEmail("");
     notify(`已允許 ${normalizedEmail} 登入`);
   };
@@ -193,8 +220,8 @@ export default function Home() {
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 
-            <button className="primary-button" type="submit">進入戰情室 <span>→</span></button>
-            <p className="demo-hint">戰情室依允許名單進入；正式密碼會在開啟業務系統時驗證</p>
+            <button className="primary-button" type="submit" disabled={loginBusy}>{loginBusy ? "登入中…" : "進入戰情室"} <span>→</span></button>
+            <p className="demo-hint">多人共用版本；初次登入預設密碼為 Ab123456</p>
           </form>
           <footer>© 2026 Aizen. Internal use only.</footer>
         </section>
@@ -286,7 +313,14 @@ export default function Home() {
 
         {view === "permissions" && (
           <div className="page">
-            <div className="page-heading"><div><p className="kicker">ACCESS CONTROL</p><h1>頁面權限管控</h1><p>設定管理者可進入的業務系統。</p></div><button className="primary-button save-button" onClick={() => { setSaved(new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })); notify("權限設定已儲存"); }}>儲存變更</button></div>
+            <div className="page-heading"><div><p className="kicker">ACCESS CONTROL</p><h1>頁面權限管控</h1><p>設定管理者可進入的業務系統。</p></div><button className="primary-button save-button" onClick={async () => {
+              await Promise.all(Object.entries(permissions).map(([name, access]) => {
+                const adminEmail = Object.entries(adminEmails).find(([, value]) => value === name)?.[0] ?? name;
+                return fetch("/api/control-state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: "permissions", email: adminEmail, permissions: access }) });
+              }));
+              setSaved(new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }));
+              notify("共享權限設定已儲存");
+            }}>儲存變更</button></div>
             <section className="permission-card">
               <div className="permission-head">
                 <div><h2>管理者頁面存取權</h2><p>勾選代表該帳號登入後可以看到並進入此系統。</p></div>
@@ -342,7 +376,10 @@ export default function Home() {
                       <span className="member-identity"><b>{member.name}</b><small>{member.email}</small></span>
                       <span className={`role-badge ${member.role === "管理員" ? "admin" : ""}`}>{member.role}</span>
                       <label className="switch access-switch" aria-label={`${member.email} 登入權限`}>
-                        <input type="checkbox" checked={member.active} onChange={() => setMembers((current) => current.map((item) => item.email === member.email ? { ...item, active: !item.active } : item))} />
+                          <input type="checkbox" checked={member.active} onChange={async () => {
+                            await fetch("/api/control-state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: "toggle", email: member.email, active: !member.active }) });
+                            await loadSharedState(token);
+                          }} />
                         <span />
                       </label>
                       <span className={`access-status ${member.active ? "enabled" : ""}`}>{member.active ? "可登入" : "已停用"}</span>
@@ -350,14 +387,18 @@ export default function Home() {
                         className="remove-member"
                         type="button"
                         disabled={member.role === "管理員"}
-                        onClick={() => { setMembers((current) => current.filter((item) => item.email !== member.email)); notify(`已移除 ${member.email}`); }}
+                        onClick={async () => {
+                          await fetch("/api/control-state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: "remove", email: member.email }) });
+                          await loadSharedState(token);
+                          notify(`已移除 ${member.email}`);
+                        }}
                       >
                         {member.role === "管理員" ? "受保護" : "移除"}
                       </button>
                     </div>
                   ))}
                 </div>
-                <div className="permission-note"><b>測試說明</b><span>名單調整可立即測試登入流程；目前是介面原型，重新整理後會還原示範資料。</span></div>
+                <div className="permission-note"><b>共享資料</b><span>名單與權限會同步儲存，其他使用者重新登入後即可看到最新設定。</span></div>
               </section>
             </section>
           </div>
