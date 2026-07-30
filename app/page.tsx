@@ -229,7 +229,7 @@ export default function Home() {
     return (
       <main className="login-page">
         <section className="login-brand" aria-label="Aizen 戰情室介紹">
-          <div className="brand-mark large">A</div>
+          <img className="brand-logo large" src="/aizen-mark.png" alt="Aizen" />
           <div className="brand-copy">
             <span>AIZEN OPERATIONS</span>
             <h1>讓每一項行政作業，<br />都在掌握之中。</h1>
@@ -243,7 +243,7 @@ export default function Home() {
 
         <section className="login-panel">
           <form className="login-card" onSubmit={login}>
-            <div className="mobile-logo"><div className="brand-mark">A</div>AIZEN</div>
+            <div className="mobile-logo"><img className="brand-logo" src="/aizen-mark.png" alt="" />AIZEN</div>
             <p className="kicker">WELCOME BACK</p>
             <h2>登入戰情室</h2>
             <p className="muted">請使用您的公司信箱繼續</p>
