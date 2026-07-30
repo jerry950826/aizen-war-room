@@ -78,11 +78,6 @@ export default function Home() {
   const [user, setUser] = useState("maggie");
   const [email, setEmail] = useState("maggiefang@ai-zens.com");
   const [password, setPassword] = useState("Ab123456");
-  const [formalToken, setFormalToken] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loginBusy, setLoginBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
@@ -99,7 +94,7 @@ export default function Home() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
-  const login = async (event: FormEvent<HTMLFormElement>) => {
+  const login = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     const member = members.find((item) => item.email === normalizedEmail);
@@ -107,49 +102,10 @@ export default function Home() {
       notify("此信箱尚未取得存取權，請聯絡管理員");
       return;
     }
-    setLoginBusy(true);
-    try {
-      const response = await fetch("/api/formal-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, password }),
-      });
-      if (!response.ok) {
-        notify("正式帳號或密碼不正確");
-        return;
-      }
-      const data = await response.json() as { token: string };
-      setFormalToken(data.token);
-      setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
-      setLoggedIn(true);
-      setView("dashboard");
-      notify(`歡迎回來，${member.name}`);
-    } finally {
-      setLoginBusy(false);
-    }
-  };
-
-  const changeFormalPassword = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (newPassword !== confirmPassword) {
-      notify("兩次輸入的新密碼不一致");
-      return;
-    }
-    const response = await fetch("/api/formal-password", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${formalToken}` },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-    if (!response.ok) {
-      const data = await response.json() as { error?: string };
-      notify(data.error ?? "正式密碼更新失敗");
-      return;
-    }
-    setPassword(newPassword);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    notify("正式系統密碼已更新");
+    setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
+    setLoggedIn(true);
+    setView("dashboard");
+    notify(`歡迎回來，${member.name}`);
   };
 
   const openService = (service: (typeof services)[number]) => {
@@ -237,8 +193,8 @@ export default function Home() {
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 
-            <button className="primary-button" type="submit" disabled={loginBusy}>{loginBusy ? "驗證正式帳號中…" : "進入戰情室"} <span>→</span></button>
-            <p className="demo-hint">使用正式公司信箱與密碼；初次登入預設密碼為 Ab123456</p>
+            <button className="primary-button" type="submit">進入戰情室 <span>→</span></button>
+            <p className="demo-hint">戰情室依允許名單進入；正式密碼會在開啟業務系統時驗證</p>
           </form>
           <footer>© 2026 Aizen. Internal use only.</footer>
         </section>
@@ -315,14 +271,16 @@ export default function Home() {
         {view === "password" && (
           <div className="page narrow-page">
             <div className="page-heading"><div><p className="kicker">ACCOUNT SECURITY</p><h1>修改登入密碼</h1><p>定期更新密碼，讓帳號維持安全。</p></div></div>
-            <form className="settings-card" onSubmit={changeFormalPassword}>
+            <section className="settings-card">
               <div className="settings-icon">⌁</div>
-              <div className="form-copy"><h2>設定正式系統新密碼</h2><p>儲存後會同步更新請假、請款與講師看板共用的正式登入密碼。</p></div>
-              <label>目前密碼<input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="輸入目前密碼" required /></label>
-              <label>新密碼<input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="輸入新密碼" minLength={8} required /></label>
-              <label>確認新密碼<input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="再次輸入新密碼" minLength={8} required /></label>
-              <div className="form-actions"><button type="button" className="secondary-button" onClick={() => setView("dashboard")}>取消</button><button className="primary-button">儲存新密碼</button></div>
-            </form>
+              <div className="form-copy"><h2>前往正式帳號設定</h2><p>密碼由正式行政系統統一管理。登入正式系統後，可在「帳號設定」安全更新共用密碼。</p></div>
+              <div className="account-link-panel">
+                <span>目前帳號</span>
+                <b>{email}</b>
+                <button className="primary-button" type="button" onClick={() => window.open("https://leaveflow-tw.jerry950826.chatgpt.site/leave", "_blank", "noopener,noreferrer")}>開啟正式帳號設定 ↗</button>
+              </div>
+              <div className="form-actions"><button type="button" className="secondary-button" onClick={() => setView("dashboard")}>返回戰情室</button></div>
+            </section>
           </div>
         )}
 
