@@ -80,6 +80,7 @@ export default function Home() {
   const [password, setPassword] = useState("Ab123456");
   const [token, setToken] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
@@ -113,24 +114,31 @@ export default function Home() {
   const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
+    setLoginError("");
     setLoginBusy(true);
-    const response = await fetch("/api/war-room-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: normalizedEmail, password }),
-    });
-    setLoginBusy(false);
-    if (!response.ok) {
-      notify("帳號或密碼不正確，或此信箱未開放");
-      return;
+    try {
+      const response = await fetch("/api/war-room-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null) as { error?: string } | null;
+        setLoginError(result?.error || "帳號或密碼不正確，或此信箱未開放。");
+        return;
+      }
+      const data = await response.json() as { token: string; name: string };
+      setToken(data.token);
+      setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
+      await loadSharedState(data.token);
+      setLoggedIn(true);
+      setView("dashboard");
+      notify(`歡迎回來，${data.name}`);
+    } catch {
+      setLoginError("目前無法連線到登入服務，請稍後再試。");
+    } finally {
+      setLoginBusy(false);
     }
-    const data = await response.json() as { token: string; name: string };
-    setToken(data.token);
-    setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
-    await loadSharedState(data.token);
-    setLoggedIn(true);
-    setView("dashboard");
-    notify(`歡迎回來，${data.name}`);
   };
 
   const openService = (service: (typeof services)[number]) => {
@@ -194,6 +202,7 @@ export default function Home() {
             <p className="kicker">WELCOME BACK</p>
             <h2>登入戰情室</h2>
             <p className="muted">請使用您的公司信箱繼續</p>
+            {loginError && <div className="login-error" role="alert">{loginError}</div>}
 
             <label htmlFor="account">公司信箱</label>
             <div className="field">

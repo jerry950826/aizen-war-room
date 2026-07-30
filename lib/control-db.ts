@@ -12,17 +12,18 @@ const seeds = [
 
 export async function ensureControlDb() {
   const db = env.DB;
-  await db.batch([
+  const statements = [
     db.prepare("CREATE TABLE IF NOT EXISTS members (email TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, password_hash TEXT NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS permissions (email TEXT PRIMARY KEY, leave INTEGER NOT NULL DEFAULT 1, claims INTEGER NOT NULL DEFAULT 1, instructors INTEGER NOT NULL DEFAULT 1)"),
     db.prepare("CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, email TEXT NOT NULL, expires_at INTEGER NOT NULL)"),
-  ]);
+  ];
   for (const [email, name, role] of seeds) {
-    await db.batch([
+    statements.push(
       db.prepare("INSERT OR IGNORE INTO members (email,name,role,active,password_hash) VALUES (?,?,?,?,?)").bind(email, name, role, 1, DEFAULT_HASH),
       db.prepare("INSERT OR IGNORE INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?)").bind(email, 1, 1, 1),
-    ]);
+    );
   }
+  await db.batch(statements);
   return db;
 }
 
