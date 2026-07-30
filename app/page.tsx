@@ -2,8 +2,9 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
-type View = "dashboard" | "password" | "permissions";
+type View = "dashboard" | "password" | "permissions" | "people";
 type ServiceId = "leave" | "claims" | "instructors";
+type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
 
 const services: Array<{
   id: ServiceId;
@@ -53,12 +54,29 @@ const initialPermissions: Record<string, Record<ServiceId, boolean>> = {
   jerry: { leave: false, claims: true, instructors: true },
 };
 
+const adminEmails: Record<string, string> = {
+  "maggie@aizen.com": "maggie",
+  "rita@aizen.com": "rita",
+  "jerry@aizen.com": "jerry",
+};
+
+const initialMembers: Member[] = [
+  { email: "maggie@aizen.com", name: "Maggie", role: "管理員", active: true },
+  { email: "rita@aizen.com", name: "Rita", role: "管理員", active: true },
+  { email: "jerry@aizen.com", name: "Jerry", role: "管理員", active: true },
+  { email: "alice@aizen.com", name: "Alice Chen", role: "一般成員", active: true },
+  { email: "kevin@aizen.com", name: "Kevin Lin", role: "一般成員", active: false },
+];
+
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [user, setUser] = useState("maggie");
+  const [email, setEmail] = useState("maggie@aizen.com");
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
+  const [members, setMembers] = useState(initialMembers);
+  const [newMemberEmail, setNewMemberEmail] = useState("");
   const [saved, setSaved] = useState("");
   const [toast, setToast] = useState("");
   const visibleServices = useMemo(
@@ -73,9 +91,32 @@ export default function Home() {
 
   const login = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    const member = members.find((item) => item.email === normalizedEmail);
+    if (!member || !member.active) {
+      notify("此信箱尚未取得存取權，請聯絡管理員");
+      return;
+    }
+    setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
     setLoggedIn(true);
     setView("dashboard");
-    notify(`歡迎回來，${user[0].toUpperCase()}${user.slice(1)}`);
+    notify(`歡迎回來，${member.name}`);
+  };
+
+  const addMember = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedEmail = newMemberEmail.trim().toLowerCase();
+    if (!normalizedEmail || members.some((member) => member.email === normalizedEmail)) {
+      notify("請輸入尚未加入的有效信箱");
+      return;
+    }
+    const name = normalizedEmail.split("@")[0].replace(/[._-]/g, " ");
+    setMembers((current) => [
+      ...current,
+      { email: normalizedEmail, name: name.replace(/\b\w/g, (letter) => letter.toUpperCase()), role: "一般成員", active: true },
+    ]);
+    setNewMemberEmail("");
+    notify(`已允許 ${normalizedEmail} 登入`);
   };
 
   if (!loggedIn) {
@@ -99,16 +140,17 @@ export default function Home() {
             <div className="mobile-logo"><div className="brand-mark">A</div>AIZEN</div>
             <p className="kicker">WELCOME BACK</p>
             <h2>登入戰情室</h2>
-            <p className="muted">請使用您的 Aizen 帳號繼續</p>
+            <p className="muted">請使用您的公司信箱繼續</p>
 
-            <label htmlFor="account">登入帳號</label>
+            <label htmlFor="account">公司信箱</label>
             <div className="field">
               <span>◎</span>
-              <select id="account" value={user} onChange={(e) => setUser(e.target.value)}>
-                <option value="maggie">maggie</option>
-                <option value="rita">rita</option>
-                <option value="jerry">jerry</option>
-              </select>
+              <input id="account" type="email" list="demo-emails" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@aizen.com" required />
+              <datalist id="demo-emails">
+                <option value="maggie@aizen.com" />
+                <option value="rita@aizen.com" />
+                <option value="jerry@aizen.com" />
+              </datalist>
             </div>
 
             <label htmlFor="password">密碼</label>
@@ -126,7 +168,7 @@ export default function Home() {
             </div>
 
             <button className="primary-button" type="submit">進入戰情室 <span>→</span></button>
-            <p className="demo-hint">測試版：選擇任一帳號即可登入</p>
+            <p className="demo-hint">測試信箱：maggie@aizen.com、rita@aizen.com、jerry@aizen.com</p>
           </form>
           <footer>© 2026 Aizen. Internal use only.</footer>
         </section>
@@ -144,6 +186,7 @@ export default function Home() {
           <p>帳號設定</p>
           <button className={view === "password" ? "active" : ""} onClick={() => setView("password")}><span>⌁</span>修改登入密碼</button>
           <button className={view === "permissions" ? "active" : ""} onClick={() => setView("permissions")}><span>♙</span>頁面權限管控</button>
+          <button className={view === "people" ? "active" : ""} onClick={() => setView("people")}><span>♧</span>人員存取管理</button>
         </nav>
         <div className="sidebar-bottom">
           <div className="user-chip">
@@ -157,7 +200,7 @@ export default function Home() {
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "password" ? "修改登入密碼" : "頁面權限管控"}</p>
+            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "人員存取管理"}</p>
           </div>
           <div className="top-actions">
             <button className="icon-button" aria-label="通知">♢<i /></button>
@@ -240,6 +283,54 @@ export default function Home() {
                 })}
               </div>
               <div className="permission-note"><b>提示</b><span>權限關閉後，該業務卡片會立即從使用者的戰情室隱藏。這是測試版，重新整理頁面後會還原預設設定。</span></div>
+            </section>
+          </div>
+        )}
+
+        {view === "people" && (
+          <div className="page">
+            <div className="page-heading">
+              <div><p className="kicker">MEMBER ACCESS</p><h1>人員存取管理</h1><p>Maggie、Rita、Jerry 可管理哪些信箱能登入戰情室。</p></div>
+              <span className="member-total">{members.filter((member) => member.active).length} 位可登入</span>
+            </div>
+            <section className="people-layout">
+              <form className="invite-card" onSubmit={addMember}>
+                <span className="invite-icon">＋</span>
+                <div><h2>新增可存取人員</h2><p>輸入公司信箱，加入後即可使用該信箱登入。</p></div>
+                <label htmlFor="new-member-email">公司信箱</label>
+                <input id="new-member-email" type="email" value={newMemberEmail} onChange={(event) => setNewMemberEmail(event.target.value)} placeholder="name@aizen.com" required />
+                <button className="primary-button" type="submit">加入允許名單</button>
+              </form>
+
+              <section className="member-card">
+                <div className="permission-head">
+                  <div><h2>允許登入名單</h2><p>停用後該信箱將無法登入；管理員帳號不可移除。</p></div>
+                  <span>共 {members.length} 人</span>
+                </div>
+                <div className="member-list">
+                  {members.map((member) => (
+                    <div className="member-row" key={member.email}>
+                      <span className="member-avatar">{member.name[0].toUpperCase()}</span>
+                      <span className="member-identity"><b>{member.name}</b><small>{member.email}</small></span>
+                      <span className={`role-badge ${member.role === "管理員" ? "admin" : ""}`}>{member.role}</span>
+                      <label className="switch access-switch" aria-label={`${member.email} 登入權限`}>
+                        <input type="checkbox" checked={member.active} onChange={() => setMembers((current) => current.map((item) => item.email === member.email ? { ...item, active: !item.active } : item))} />
+                        <span />
+                      </label>
+                      <span className={`access-status ${member.active ? "enabled" : ""}`}>{member.active ? "可登入" : "已停用"}</span>
+                      <button
+                        className="remove-member"
+                        type="button"
+                        disabled={member.role === "管理員"}
+                        onClick={() => { setMembers((current) => current.filter((item) => item.email !== member.email)); notify(`已移除 ${member.email}`); }}
+                      >
+                        {member.role === "管理員" ? "受保護" : "移除"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="permission-note"><b>測試說明</b><span>名單調整可立即測試登入流程；目前是介面原型，重新整理後會還原示範資料。</span></div>
+              </section>
             </section>
           </div>
         )}

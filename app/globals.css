@@ -141,6 +141,32 @@ button { color: inherit; }
 .permission-note b { color: var(--purple); white-space: nowrap; }
 .toast { position: fixed; z-index: 10; right: 28px; bottom: 28px; padding: 14px 18px; border-radius: 10px; background: #07365f; color: white; box-shadow: 0 12px 30px rgba(0,54,103,.25); font-size: 12px; display: flex; gap: 9px; align-items: center; }
 .toast span { color: #64dfb3; }
+.member-total { padding: 10px 15px; border: 1px solid #d8e7f4; border-radius: 20px; background: white; color: #5d7184; font-size: 11px; }
+.people-layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
+.invite-card, .member-card { background: white; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 35px rgba(28,35,67,.05); }
+.invite-card { padding: 27px; display: flex; flex-direction: column; }
+.invite-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 11px; background: #e8f4ff; color: var(--purple); font-size: 24px; font-weight: 700; }
+.invite-card h2 { margin: 19px 0 7px; font-size: 17px; }
+.invite-card p { min-height: 42px; margin: 0 0 24px; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.invite-card label { margin-bottom: 8px; font-size: 11px; font-weight: 800; }
+.invite-card input { width: 100%; height: 47px; margin-bottom: 13px; padding: 0 13px; border: 1px solid #dfe3e8; border-radius: 8px; outline: 0; }
+.invite-card input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(0,115,223,.09); }
+.invite-card .primary-button { width: 100%; }
+.member-card { min-width: 0; overflow: hidden; }
+.member-list { min-width: 660px; }
+.member-row { display: grid; grid-template-columns: 42px minmax(150px, 1.8fr) 80px 50px 58px 65px; gap: 11px; align-items: center; min-height: 76px; padding: 0 25px; border-bottom: 1px solid #eff0f4; }
+.member-avatar { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: #e8f4ff; color: var(--purple); font-size: 13px; font-weight: 900; }
+.member-identity { min-width: 0; }
+.member-identity b, .member-identity small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-identity b { font-size: 12px; }
+.member-identity small { margin-top: 5px; color: #9198a7; font-size: 9px; }
+.role-badge { justify-self: start; padding: 5px 8px; border-radius: 12px; background: #f1f3f5; color: #747c8a; font-size: 9px; font-weight: 800; }
+.role-badge.admin { background: #e8f4ff; color: var(--purple); }
+.access-switch { justify-self: center; }
+.access-status { color: #969dab; font-size: 9px; font-weight: 800; }
+.access-status.enabled { color: #148064; }
+.remove-member { justify-self: end; border: 0; background: transparent; color: #e03f3f; font-size: 9px; font-weight: 800; cursor: pointer; }
+.remove-member:disabled { color: #a8adb7; cursor: not-allowed; }
 
 @media (max-width: 960px) {
   .login-page { grid-template-columns: 1fr; }
@@ -163,6 +189,11 @@ button { color: inherit; }
   .overview-strip > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .narrow-page { margin: auto; }
   .permission-table { overflow-x: auto; }
+  .people-layout { grid-template-columns: 1fr; }
+  .invite-card { display: grid; grid-template-columns: 50px 1fr; gap: 0 14px; }
+  .invite-card > label, .invite-card > input, .invite-card > button { grid-column: 2; }
+  .invite-card h2 { margin-top: 3px; }
+  .member-card { overflow-x: auto; }
 }
 
 @media (max-width: 600px) {
@@ -191,4 +222,8 @@ button { color: inherit; }
   .settings-icon { margin-bottom: 18px; }
   .form-actions { display: flex; }
   .save-button { min-width: auto; padding: 0 14px; }
+  .people-layout { display: block; }
+  .invite-card { display: block; margin-bottom: 18px; }
+  .member-card { overflow-x: auto; }
+  .member-total { white-space: nowrap; }
 }
