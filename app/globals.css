@@ -116,13 +116,15 @@ button { color: inherit; }
 .service-footer div span { font-size: 9px; color: #999ead; }
 .service-footer button { border: 0; background: transparent; cursor: pointer; color: var(--purple); font-size: 10px; font-weight: 800; }
 .service-footer button span { margin-left: 5px; }
-.fortune-disclaimer { padding: 9px 14px; border: 1px solid #f1dfb8; border-radius: 20px; background: #fffaf0; color: #8b6a27; font-size: 10px; }
-.fortune-hero { position: relative; min-height: 280px; padding: 38px 42px; display: grid; grid-template-columns: 180px minmax(0, 1fr) 190px; gap: 34px; align-items: center; overflow: hidden; border-radius: 20px; color: white; background: radial-gradient(circle at 8% 18%,rgba(255,255,255,.8) 0 1px,transparent 2px),radial-gradient(circle at 42% 23%,rgba(139,208,255,.75) 0 1px,transparent 2px),radial-gradient(circle at 73% 73%,rgba(255,224,137,.75) 0 1px,transparent 2px),linear-gradient(135deg, #061f43, #075da9 58%, #253b8d); background-size: 120px 120px,170px 170px,210px 210px,auto; box-shadow: 0 18px 40px rgba(0,68,130,.2); }
-.fortune-score { text-align: center; padding-right: 34px; border-right: 1px solid rgba(255,255,255,.2); }
-.fortune-score span, .fortune-score small { display: block; color: #cfe7fa; font-size: 10px; }
-.fortune-score strong { display: inline-block; margin: 8px 2px 0; font-size: 67px; line-height: 1; }
-.fortune-score small { display: inline; }
-.fortune-summary { position: relative; z-index: 1; }
+.fortune-page .page-heading { align-items: flex-end; }
+.fortune-disclaimer { flex: 0 0 auto; padding: 9px 14px; border: 1px solid #f1dfb8; border-radius: 20px; background: #fffaf0; color: #8b6a27; font-size: 10px; white-space: nowrap; }
+.fortune-hero { position: relative; min-height: 280px; padding: 38px 42px; display: grid; grid-template-columns: 170px minmax(0, 1fr) 160px; gap: 34px; align-items: stretch; overflow: hidden; border-radius: 20px; color: white; background: radial-gradient(circle at 8% 18%,rgba(255,255,255,.8) 0 1px,transparent 2px),radial-gradient(circle at 42% 23%,rgba(139,208,255,.75) 0 1px,transparent 2px),radial-gradient(circle at 73% 73%,rgba(255,224,137,.75) 0 1px,transparent 2px),linear-gradient(135deg, #061f43, #075da9 58%, #253b8d); background-size: 120px 120px,170px 170px,210px 210px,auto; box-shadow: 0 18px 40px rgba(0,68,130,.2); }
+.fortune-score { min-width: 0; padding-right: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-right: 1px solid rgba(255,255,255,.2); }
+.fortune-score span, .fortune-score small { color: #cfe7fa; font-size: 10px; }
+.fortune-score-value { margin-top: 10px; display: flex; align-items: baseline; justify-content: center; gap: 5px; }
+.fortune-score strong { font-size: 67px; line-height: 1; }
+.fortune-score small { white-space: nowrap; }
+.fortune-summary { position: relative; z-index: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
 .zodiac-badge { display: inline-flex; align-items: center; gap: 9px; margin-bottom: 18px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 12px; background: rgba(255,255,255,.1); backdrop-filter: blur(5px); }
 .zodiac-badge > b { color: #ffdd78; font-size: 24px; }
 .zodiac-badge > span { color: white; font-size: 11px; font-weight: 800; }
@@ -130,7 +132,7 @@ button { color: inherit; }
 .fortune-summary > span { color: #9ed3fb; font-size: 9px; font-weight: 800; letter-spacing: .18em; }
 .fortune-summary h2 { margin: 11px 0 12px; font-size: 32px; }
 .fortune-summary p { max-width: 470px; margin: 0; color: #dceefa; font-size: 13px; line-height: 1.8; }
-.fortune-orbit { position: relative; width: 160px; height: 160px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; }
+.fortune-orbit { position: relative; width: 160px; height: 160px; align-self: center; justify-self: end; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; }
 .fortune-orbit::before, .fortune-orbit::after { content: ""; position: absolute; border: 1px solid rgba(255,255,255,.11); border-radius: 50%; }
 .fortune-orbit::before { inset: 20px; }
 .fortune-orbit::after { inset: 42px; }
@@ -138,30 +140,32 @@ button { color: inherit; }
 .fortune-orbit > span { position: absolute; bottom: 23px; color: #dceeff; font-size: 9px; font-weight: 800; }
 .fortune-orbit i { position: absolute; top: 14px; left: 31px; width: 9px; height: 9px; border-radius: 50%; background: white; box-shadow: 72px 112px 0 #8ed2ff, 103px 31px 0 #ffdc76; }
 .fortune-chips { position: relative; z-index: 1; width: calc(100% - 56px); margin: -21px auto 0; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid #dce5ee; border-radius: 13px; background: rgba(255,255,255,.96); box-shadow: 0 10px 30px rgba(16,55,91,.12); }
-.fortune-chips div { padding: 15px 20px; border-right: 1px solid #e8edf2; }
+.fortune-chips div { min-width: 0; min-height: 68px; padding: 15px 20px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid #e8edf2; }
 .fortune-chips div:last-child { border-right: 0; }
 .fortune-chips span, .fortune-chips strong { display: block; }
 .fortune-chips span { color: #8290a0; font-size: 8px; font-weight: 800; }
 .fortune-chips strong { margin-top: 5px; font-size: 11px; }
 .fortune-metrics { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.fortune-metrics article, .fortune-guidance article { padding: 23px; border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: 0 8px 24px rgba(28,35,67,.035); }
+.fortune-metrics article, .fortune-guidance article { min-width: 0; padding: 23px; border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: 0 8px 24px rgba(28,35,67,.035); }
+.fortune-metrics article { min-height: 132px; display: grid; grid-template-rows: auto auto 1fr; align-content: start; }
 .fortune-metrics article > div:first-child { display: flex; justify-content: space-between; align-items: center; }
 .fortune-metrics span { color: #68758a; font-size: 11px; font-weight: 800; }
 .fortune-metrics strong { font-size: 20px; }
 .fortune-bar { height: 6px; margin: 15px 0 12px; overflow: hidden; border-radius: 10px; background: #edf0f4; }
 .fortune-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0073df, #59b3ff); }
 .fortune-metrics p { margin: 0; color: var(--muted); font-size: 10px; }
-.fortune-guidance { margin-top: 16px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+.fortune-guidance { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .fortune-guidance article > span { color: var(--purple); font-size: 9px; font-weight: 900; letter-spacing: .12em; }
 .attention-card { background: linear-gradient(135deg, #fff, #f4f9ff) !important; }
 .attention-card h2 { margin: 13px 0 10px; font-size: 20px; line-height: 1.5; }
 .attention-card p { margin: 0; color: var(--muted); font-size: 11px; }
-.lucky-card dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0 0; }
+.lucky-card { display: flex; flex-direction: column; }
+.lucky-card dl { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 8px; margin: 15px 0 0; }
 .lucky-card dl div { padding: 12px 10px; border-radius: 9px; background: #f5f8fb; }
 .lucky-card dt { color: #8b95a4; font-size: 8px; }
 .lucky-card dd { margin: 5px 0 0; font-size: 11px; font-weight: 800; }
-.cosmic-grid { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 16px; }
-.cosmic-grid article { min-height: 145px; padding: 22px; border-radius: 14px; border: 1px solid var(--line); background: white; box-shadow: 0 8px 24px rgba(28,35,67,.035); }
+.cosmic-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.35fr); gap: 16px; align-items: stretch; }
+.cosmic-grid article { min-width: 0; min-height: 160px; padding: 22px; border-radius: 14px; border: 1px solid var(--line); background: white; box-shadow: 0 8px 24px rgba(28,35,67,.035); }
 .mission-card, .warning-card { display: flex; gap: 14px; align-items: flex-start; }
 .cosmic-icon { flex: 0 0 auto; width: 35px; height: 35px; display: grid; place-items: center; border-radius: 10px; background: #e8f4ff; color: var(--purple); font-weight: 900; }
 .warning-card .cosmic-icon { background: #fff1e8; color: #d96d32; }
@@ -329,18 +333,19 @@ button { color: inherit; }
   .date { display: none; }
   .page { padding: 30px 20px 50px; }
   .page-heading { gap: 18px; }
+  .fortune-page .page-heading { align-items: flex-start; flex-direction: column; margin-bottom: 24px; }
   .page-heading h1 { font-size: 26px; }
   .status-pill { display: none; }
   .overview-strip { grid-template-columns: 1fr 1fr; }
   .overview-strip > div { padding: 20px; }
   .progress-block { grid-column: span 2; }
   .service-grid { grid-template-columns: 1fr; }
-  .fortune-hero { display: block; padding: 28px 24px; }
+  .fortune-hero { display: block; min-height: 0; padding: 28px 24px; }
   .fortune-score { margin-bottom: 24px; padding: 0 0 22px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.2); }
   .fortune-score strong { font-size: 55px; }
   .fortune-summary h2 { font-size: 27px; }
   .fortune-chips { width: calc(100% - 24px); grid-template-columns: 1fr; }
-  .fortune-chips div { border-right: 0; border-bottom: 1px solid #e8edf2; }
+  .fortune-chips div { min-height: 62px; border-right: 0; border-bottom: 1px solid #e8edf2; }
   .fortune-chips div:last-child { border-bottom: 0; }
   .fortune-metrics { grid-template-columns: 1fr; }
   .lucky-card dl { grid-template-columns: 1fr; }

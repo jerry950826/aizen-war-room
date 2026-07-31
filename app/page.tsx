@@ -198,9 +198,9 @@ export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loggedInRole, setLoggedInRole] = useState<Member["role"]>("一般成員");
   const [view, setView] = useState<View>("dashboard");
-  const [user, setUser] = useState("maggie");
-  const [email, setEmail] = useState("maggiefang@ai-zens.com");
-  const [password, setPassword] = useState("Ab123456");
+  const [user, setUser] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
@@ -224,9 +224,10 @@ export default function Home() {
     () => services.filter((service) => permissions[user]?.[service.id] ?? true),
     [permissions, user],
   );
+  const profileName = user || "使用者";
   const profile = userProfiles[user] ?? {
-    english: user[0].toUpperCase() + user.slice(1),
-    name: members.find((member) => member.email === email)?.name ?? user,
+    english: profileName[0].toUpperCase() + profileName.slice(1),
+    name: members.find((member) => member.email === email)?.name ?? profileName,
     department: "Aizen",
     title: "一般成員",
   };
@@ -545,7 +546,7 @@ export default function Home() {
               <span className="fortune-disclaimer">{fortune.basis}</span>
             </div>
             <section className="fortune-hero">
-              <div className="fortune-score"><span>今日整體運勢</span><strong>{fortune.overall}</strong><small>/ 100</small></div>
+              <div className="fortune-score"><span>今日整體運勢</span><div className="fortune-score-value"><strong>{fortune.overall}</strong><small>/ 100</small></div></div>
               <div className="fortune-summary">
                 <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・今日關鍵字：{fortune.keyword}</small></span></div>
                 <span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{fortune.summary}</p>

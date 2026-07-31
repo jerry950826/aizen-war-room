@@ -109,3 +109,24 @@ test("登入欄位使用一致圖示並覆蓋瀏覽器自動填入底色", async
   assert.match(styles, /grid-template-columns: 48px minmax\(0, 1fr\) auto/);
   assert.match(styles, /input:-webkit-autofill/);
 });
+
+test("登入頁不預填特定帳號或密碼", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /const \[user, setUser\] = useState\(""\)/);
+  assert.match(page, /const \[email, setEmail\] = useState\(""\)/);
+  assert.match(page, /const \[password, setPassword\] = useState\(""\)/);
+  assert.match(page, /const profileName = user \|\| "使用者"/);
+});
+
+test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {
+  const [page, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /className="fortune-score-value"/);
+  assert.match(styles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) minmax\(0, 1\.35fr\)/);
+  assert.match(styles, /\.fortune-metrics article \{ min-height: 132px; display: grid/);
+  assert.match(styles, /\.fortune-page \.page-heading \{ align-items: flex-start; flex-direction: column/);
+});
