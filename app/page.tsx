@@ -98,7 +98,7 @@ const organizationPeople: OrgPerson[] = [
   { id: "pearl", department: "設計部", level: 2, title: "產品設計師", english: "Pearl", name: "陳品樺", phone: "0979-635252", email: "pearlchen@ai-zens.com", birthday: "08-01" },
   { id: "blair", department: "設計部", level: 2, title: "數位設計師", english: "Blair", name: "彭愛媛", phone: "0988-506226", email: "blairpeng@ai-zens.com", birthday: "07-12" },
   { id: "sean", department: "業務部", level: 2, title: "資深業務經理", english: "Sean", name: "張智翔", phone: "0985-699592", email: "seanchang@ai-zens.com", birthday: null },
-  { id: "joanne", department: "業務部", level: 2, title: "資深業務經理", english: "Joanne", name: "陳靜宜", phone: "0912-582956", email: "joannechen@ai-zens.com", birthday: null },
+  { id: "joanne", department: "業務部", level: 2, title: "資深業務經理", english: "Joanne", name: "陳靜宜", phone: "0912-582956", email: "joannechen@ai-zens.com", birthday: "06-27" },
   { id: "cat", department: "行銷部", level: 2, title: "行銷主任", english: "Cat", name: "陳瑾虹", phone: "0972-866530", email: "catchen@ai-zens.com", birthday: "02-04" },
   { id: "gary", department: "行銷部", level: 3, title: "行銷專員", english: "Gary", name: "石孟玄", phone: "0912-818915", email: "garyshih@ai-zens.com", birthday: "07-23" },
   { id: "sharlene", department: "行銷部", level: 3, title: "內容行銷專員", english: "Sharlene", name: "潘欣芸", phone: "0958-031793", email: "sinyunpan@ai-zens.com", birthday: "03-17" },
@@ -439,7 +439,7 @@ export default function Home() {
 
             <label htmlFor="account">公司信箱</label>
             <div className="field">
-              <span>◎</span>
+              <span className="field-icon email-field-icon" aria-hidden="true" />
               <input id="account" type="email" list="demo-emails" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@aizen.com" required />
               <datalist id="demo-emails">
                 <option value="maggiefang@ai-zens.com" />
@@ -450,7 +450,7 @@ export default function Home() {
 
             <label htmlFor="password">密碼</label>
             <div className="field">
-              <span>⌑</span>
+              <span className="field-icon lock-field-icon" aria-hidden="true" />
               <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} />
               <button type="button" className="eye" onClick={() => setShowPassword(!showPassword)} aria-label="顯示或隱藏密碼">
                 {showPassword ? "隱藏" : "顯示"}

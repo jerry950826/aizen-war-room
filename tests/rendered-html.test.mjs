@@ -90,3 +90,22 @@ test("生日可判斷星座並顯示趣味運勢內容", async () => {
   assert.match(page, /能量補給/);
   assert.match(page, /社交暗號/);
 });
+
+test("Joanne 生日為六月二十七日並會套用巨蟹座運勢", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /email: "joannechen@ai-zens\.com", birthday: "06-27"/);
+  assert.match(page, /name: "巨蟹座", icon: "♋"/);
+});
+
+test("登入欄位使用一致圖示並覆蓋瀏覽器自動填入底色", async () => {
+  const [page, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /className="field-icon email-field-icon"/);
+  assert.match(page, /className="field-icon lock-field-icon"/);
+  assert.match(styles, /grid-template-columns: 48px minmax\(0, 1fr\) auto/);
+  assert.match(styles, /input:-webkit-autofill/);
+});
