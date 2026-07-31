@@ -205,6 +205,7 @@ export default function Home() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [activeLoginField, setActiveLoginField] = useState<"email" | "password" | null>(null);
+  const [rememberAccount, setRememberAccount] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -460,7 +461,7 @@ export default function Home() {
             </div>
 
             <div className="login-options">
-              <label className="remember"><input type="checkbox" /> 記住我的帳號</label>
+              <label className="remember"><input type="checkbox" name="war-room-remember" autoComplete="off" checked={rememberAccount} onChange={(event) => setRememberAccount(event.target.checked)} /> 記住我的帳號</label>
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 

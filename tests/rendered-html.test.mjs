@@ -121,6 +121,8 @@ test("登入頁不預填特定帳號或密碼", async () => {
   assert.match(page, /autoComplete="new-password"/);
   assert.match(page, /readOnly=\{activeLoginField !== "email"\}/);
   assert.match(page, /readOnly=\{activeLoginField !== "password"\}/);
+  assert.match(page, /const \[rememberAccount, setRememberAccount\] = useState\(false\)/);
+  assert.match(page, /checked=\{rememberAccount\}/);
   assert.doesNotMatch(page, /defaultChecked \/> 記住我的帳號/);
 });
 
