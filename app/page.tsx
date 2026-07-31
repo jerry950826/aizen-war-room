@@ -128,6 +128,24 @@ function dailySeed(value: string) {
   return seed;
 }
 
+function taipeiToday() {
+  const date = new Date();
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date).map((part) => [part.type, part.value]),
+  );
+  const weekday = new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", weekday: "long" }).format(date);
+  return {
+    key: `${parts.year}-${parts.month}-${parts.day}`,
+    topbar: `${parts.year} 年 ${Number(parts.month)} 月 ${Number(parts.day)} 日・${weekday}`,
+    fortune: `${Number(parts.month)} 月 ${Number(parts.day)} 日・${weekday}`,
+  };
+}
+
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loggedInRole, setLoggedInRole] = useState<Member["role"]>("一般成員");
@@ -165,14 +183,14 @@ export default function Home() {
     title: "一般成員",
   };
   const isAdmin = loggedInRole === "管理員";
+  const currentDay = taipeiToday();
   const fortune = useMemo(() => {
-    const date = new Date();
-    const dayKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    const dayKey = currentDay.key;
     const seed = dailySeed(`${email}:${dayKey}`);
     const theme = fortuneThemes[seed % fortuneThemes.length];
     return {
       ...theme,
-      date: new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric", weekday: "long" }).format(date),
+      date: currentDay.fortune,
       overall: 68 + seed % 27,
       work: 60 + (seed >>> 3) % 36,
       people: 60 + (seed >>> 7) % 36,
@@ -182,7 +200,7 @@ export default function Home() {
       number: seed % 9 + 1,
       bestTime: ["09:30–11:00", "10:00–11:30", "13:30–15:00", "15:00–16:30", "16:00–17:30"][seed % 5],
     };
-  }, [email]);
+  }, [email, currentDay.key, currentDay.fortune]);
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -420,7 +438,7 @@ export default function Home() {
           </div>
           <div className="top-actions">
             <button className="icon-button" aria-label="通知">♢<i /></button>
-            <span className="date">2026 年 7 月 29 日・星期三</span>
+            <span className="date">{currentDay.topbar}</span>
           </div>
         </header>
 

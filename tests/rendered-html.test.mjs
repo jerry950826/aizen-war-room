@@ -55,3 +55,12 @@ test("今日運勢依帳號與日期固定並提供注意事項", async () => {
   assert.match(page, /今天該注意什麼/);
   assert.match(page, /生活提醒・輕鬆參考/);
 });
+
+test("右上日期與今日運勢使用台北時區的動態日期", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /function taipeiToday\(\)/);
+  assert.match(page, /timeZone: "Asia\/Taipei"/);
+  assert.match(page, /<span className="date">\{currentDay\.topbar\}<\/span>/);
+  assert.doesNotMatch(page, /2026 年 7 月 29 日・星期三/);
+});
