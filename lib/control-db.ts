@@ -17,6 +17,12 @@ const seeds = [
   ["sinyunpan@ai-zens.com", "Sharlene 潘欣芸", "一般成員"],
 ] as const;
 
+const nameCorrections = [
+  ["pearlchen@ai-zens.com", "Pearlchen", "Pearl 陳品樺"],
+  ["garyshih@ai-zens.com", "Garyshih", "Gary 石孟玄"],
+  ["sinyunpan@ai-zens.com", "Sinyunpan", "Sharlene 潘欣芸"],
+] as const;
+
 export async function ensureControlDb() {
   const db = env.DB;
   const statements = [
@@ -28,6 +34,11 @@ export async function ensureControlDb() {
     statements.push(
       db.prepare("INSERT OR IGNORE INTO members (email,name,role,active,password_hash) VALUES (?,?,?,?,?)").bind(email, name, role, 1, DEFAULT_HASH),
       db.prepare("INSERT OR IGNORE INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?)").bind(email, 1, 1, 1),
+    );
+  }
+  for (const [email, oldName, correctedName] of nameCorrections) {
+    statements.push(
+      db.prepare("UPDATE members SET name=? WHERE email=? AND name=?").bind(correctedName, email, oldName),
     );
   }
   await db.batch(statements);

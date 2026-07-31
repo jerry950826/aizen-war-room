@@ -36,3 +36,12 @@ test("公司組織圖包含請假系統全員且只讓管理員調整登入", as
   assert.match(page, /\{isAdmin && <section className="organization-admin">/);
   assert.match(database, /sinyunpan@ai-zens\.com/);
 });
+
+test("修正既有 Pearl、Gary 與 Sharlene 顯示名稱", async () => {
+  const database = await readFile(new URL("../lib/control-db.ts", import.meta.url), "utf8");
+
+  assert.match(database, /\["pearlchen@ai-zens\.com", "Pearlchen", "Pearl 陳品樺"\]/);
+  assert.match(database, /\["garyshih@ai-zens\.com", "Garyshih", "Gary 石孟玄"\]/);
+  assert.match(database, /\["sinyunpan@ai-zens\.com", "Sinyunpan", "Sharlene 潘欣芸"\]/);
+  assert.match(database, /UPDATE members SET name=\? WHERE email=\? AND name=\?/);
+});
