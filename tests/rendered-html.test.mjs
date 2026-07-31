@@ -117,6 +117,11 @@ test("登入頁不預填特定帳號或密碼", async () => {
   assert.match(page, /const \[email, setEmail\] = useState\(""\)/);
   assert.match(page, /const \[password, setPassword\] = useState\(""\)/);
   assert.match(page, /const profileName = user \|\| "使用者"/);
+  assert.match(page, /className="login-card" onSubmit=\{login\} autoComplete="off"/);
+  assert.match(page, /autoComplete="new-password"/);
+  assert.match(page, /readOnly=\{activeLoginField !== "email"\}/);
+  assert.match(page, /readOnly=\{activeLoginField !== "password"\}/);
+  assert.doesNotMatch(page, /defaultChecked \/> 記住我的帳號/);
 });
 
 test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {

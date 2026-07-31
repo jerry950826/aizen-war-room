@@ -204,6 +204,7 @@ export default function Home() {
   const [token, setToken] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [activeLoginField, setActiveLoginField] = useState<"email" | "password" | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -431,7 +432,7 @@ export default function Home() {
         </section>
 
         <section className="login-panel">
-          <form className="login-card" onSubmit={login}>
+          <form className="login-card" onSubmit={login} autoComplete="off">
             <div className="mobile-logo"><img className="brand-logo" src="/aizen-mark.png" alt="" />AIZEN</div>
             <p className="kicker">WELCOME BACK</p>
             <h2>登入戰情室</h2>
@@ -441,7 +442,7 @@ export default function Home() {
             <label htmlFor="account">公司信箱</label>
             <div className="field">
               <span className="field-icon email-field-icon" aria-hidden="true" />
-              <input id="account" type="email" list="demo-emails" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@aizen.com" required />
+              <input id="account" name="war-room-email" type="email" inputMode="email" autoComplete="off" data-lpignore="true" data-1p-ignore="true" readOnly={activeLoginField !== "email"} list="demo-emails" value={email} onPointerDown={() => setActiveLoginField("email")} onFocus={() => setActiveLoginField("email")} onChange={(e) => setEmail(e.target.value)} placeholder="name@ai-zens.com" required />
               <datalist id="demo-emails">
                 <option value="maggiefang@ai-zens.com" />
                 <option value="ritahsieh@ai-zens.com" />
@@ -452,14 +453,14 @@ export default function Home() {
             <label htmlFor="password">密碼</label>
             <div className="field">
               <span className="field-icon lock-field-icon" aria-hidden="true" />
-              <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} />
+              <input id="password" name="war-room-access-key" type={showPassword ? "text" : "password"} autoComplete="new-password" data-lpignore="true" data-1p-ignore="true" readOnly={activeLoginField !== "password"} value={password} onPointerDown={() => setActiveLoginField("password")} onFocus={() => setActiveLoginField("password")} onChange={(event) => setPassword(event.target.value)} />
               <button type="button" className="eye" onClick={() => setShowPassword(!showPassword)} aria-label="顯示或隱藏密碼">
                 {showPassword ? "隱藏" : "顯示"}
               </button>
             </div>
 
             <div className="login-options">
-              <label className="remember"><input type="checkbox" defaultChecked /> 記住我的帳號</label>
+              <label className="remember"><input type="checkbox" /> 記住我的帳號</label>
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 
