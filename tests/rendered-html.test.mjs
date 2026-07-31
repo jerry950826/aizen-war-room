@@ -45,3 +45,13 @@ test("修正既有 Pearl、Gary 與 Sharlene 顯示名稱", async () => {
   assert.match(database, /\["sinyunpan@ai-zens\.com", "Sinyunpan", "Sharlene 潘欣芸"\]/);
   assert.match(database, /UPDATE members SET name=\? WHERE email=\? AND name=\?/);
 });
+
+test("今日運勢依帳號與日期固定並提供注意事項", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /type View = "dashboard" \| "fortune"/);
+  assert.match(page, /dailySeed\(`\$\{email\}:\$\{dayKey\}`\)/);
+  assert.match(page, />今日運勢</);
+  assert.match(page, /今天該注意什麼/);
+  assert.match(page, /生活提醒・輕鬆參考/);
+});

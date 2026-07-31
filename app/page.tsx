@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
-type View = "dashboard" | "password" | "permissions" | "people";
+type View = "dashboard" | "fortune" | "password" | "permissions" | "people";
 type ServiceId = "leave" | "claims" | "instructors";
 type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
 type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string };
@@ -105,6 +105,29 @@ const organizationPeople: OrgPerson[] = [
   { id: "rita", department: "企劃部", level: 2, title: "企劃兼行政", english: "Rita", name: "謝雨如", phone: "0927-765167", email: "ritahsieh@ai-zens.com" },
 ];
 
+const fortuneThemes = [
+  { title: "穩中有進", summary: "今天適合把重要工作往前推一步，先完成最有影響力的事情。", focus: "聚焦一件關鍵任務，比同時處理很多小事更有效。" },
+  { title: "放慢確認", summary: "今天的節奏不必太快，確認細節能替你避開後續重工。", focus: "送出訊息、文件或款項前，多看一次名稱、日期與數字。" },
+  { title: "主動連結", summary: "今天的人際能量不錯，主動開口容易得到有用的回應。", focus: "卡住時及早同步，不要等問題累積後才處理。" },
+  { title: "整理優先", summary: "今天適合收斂雜訊、整理待辦，清楚的順序會帶來好狀態。", focus: "先分清楚立即、重要與可延後，避免被臨時事項牽著走。" },
+  { title: "保持彈性", summary: "今天可能出現計畫外的小變化，留下緩衝就能從容應對。", focus: "行程不要排得太滿，重要安排預留至少十五分鐘。" },
+];
+
+const fortuneAdvice = [
+  "溝通時先確認彼此對完成標準的理解一致。",
+  "避免在疲累時做不可逆或金額較大的決定。",
+  "今天容易忽略小細節，送出前請再檢查一次。",
+  "別把所有事情都自己扛，適時請同事一起確認。",
+  "遇到不同意見先聽完，再決定是否需要立即回應。",
+  "注意久坐與用眼時間，中午前後安排短暫伸展。",
+];
+
+function dailySeed(value: string) {
+  let seed = 0;
+  for (const character of value) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
+  return seed;
+}
+
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loggedInRole, setLoggedInRole] = useState<Member["role"]>("一般成員");
@@ -142,6 +165,24 @@ export default function Home() {
     title: "一般成員",
   };
   const isAdmin = loggedInRole === "管理員";
+  const fortune = useMemo(() => {
+    const date = new Date();
+    const dayKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    const seed = dailySeed(`${email}:${dayKey}`);
+    const theme = fortuneThemes[seed % fortuneThemes.length];
+    return {
+      ...theme,
+      date: new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric", weekday: "long" }).format(date),
+      overall: 68 + seed % 27,
+      work: 60 + (seed >>> 3) % 36,
+      people: 60 + (seed >>> 7) % 36,
+      finance: 60 + (seed >>> 11) % 36,
+      advice: fortuneAdvice[(seed >>> 5) % fortuneAdvice.length],
+      color: ["天空藍", "森林綠", "暖橘色", "米白色", "深海藍"][seed % 5],
+      number: seed % 9 + 1,
+      bestTime: ["09:30–11:00", "10:00–11:30", "13:30–15:00", "15:00–16:30", "16:00–17:30"][seed % 5],
+    };
+  }, [email]);
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -357,6 +398,7 @@ export default function Home() {
         <nav aria-label="主選單">
           <p>工作台</p>
           <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}><span>▦</span>戰情室總覽</button>
+          <button className={view === "fortune" ? "active" : ""} onClick={() => setView("fortune")}><span>☀</span>今日運勢</button>
           <p>帳號設定</p>
           <button className={view === "password" ? "active" : ""} onClick={() => setView("password")}><span>⌁</span>修改登入密碼</button>
           {isAdmin && <button className={view === "permissions" ? "active" : ""} onClick={() => setView("permissions")}><span>♙</span>頁面權限管控</button>}
@@ -374,7 +416,7 @@ export default function Home() {
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "公司組織圖"}</p>
+            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "fortune" ? "今日運勢" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "公司組織圖"}</p>
           </div>
           <div className="top-actions">
             <button className="icon-button" aria-label="通知">♢<i /></button>
@@ -412,6 +454,48 @@ export default function Home() {
                   </div>
                 </article>
               ))}
+            </section>
+          </div>
+        )}
+
+        {view === "fortune" && (
+          <div className="page fortune-page">
+            <div className="page-heading">
+              <div><p className="kicker">DAILY FORTUNE</p><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
+              <span className="fortune-disclaimer">生活提醒・輕鬆參考</span>
+            </div>
+            <section className="fortune-hero">
+              <div className="fortune-score"><span>今日整體運勢</span><strong>{fortune.overall}</strong><small>/ 100</small></div>
+              <div className="fortune-summary"><span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{fortune.summary}</p></div>
+              <div className="fortune-orbit"><i /><b>☀</b></div>
+            </section>
+            <section className="fortune-metrics">
+              {[
+                ["工作運", fortune.work, "先完成最重要的一步"],
+                ["人際運", fortune.people, "清楚表達也記得傾聽"],
+                ["財務運", fortune.finance, "支出與數字多確認一次"],
+              ].map(([label, score, note]) => (
+                <article key={String(label)}>
+                  <div><span>{label}</span><strong>{score}</strong></div>
+                  <div className="fortune-bar"><i style={{ width: `${score}%` }} /></div>
+                  <p>{note}</p>
+                </article>
+              ))}
+            </section>
+            <section className="fortune-guidance">
+              <article className="attention-card">
+                <span>今天該注意什麼</span>
+                <h2>{fortune.advice}</h2>
+                <p>{fortune.focus}</p>
+              </article>
+              <article className="lucky-card">
+                <span>今日幸運提示</span>
+                <dl>
+                  <div><dt>幸運色</dt><dd>{fortune.color}</dd></div>
+                  <div><dt>幸運數字</dt><dd>{fortune.number}</dd></div>
+                  <div><dt>順勢時段</dt><dd>{fortune.bestTime}</dd></div>
+                </dl>
+              </article>
             </section>
           </div>
         )}
