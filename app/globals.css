@@ -211,6 +211,7 @@ button { color: inherit; }
 .organization-modal dl > div { padding: 13px 15px; border-radius: 9px; background: #f5f9fc; }
 .organization-modal dt { margin-bottom: 5px; color: #8c97a4; font-size: 9px; }
 .organization-modal dd { margin: 0; font-size: 12px; font-weight: 700; }
+.organization-modal dd.collecting { color: #929cab; font-weight: 600; }
 .organization-modal a { color: #244e72; text-decoration: none; }
 .organization-modal .primary-button { width: 100%; }
 .organization-modal-close { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; color: #7f8994; font-size: 24px; cursor: pointer; }

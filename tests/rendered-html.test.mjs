@@ -50,10 +50,10 @@ test("今日運勢依帳號與日期固定並提供注意事項", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
   assert.match(page, /type View = "dashboard" \| "fortune"/);
-  assert.match(page, /dailySeed\(`\$\{email\}:\$\{dayKey\}`\)/);
+  assert.match(page, /dailySeed\(`\$\{fortuneIdentity\}:\$\{dayKey\}`\)/);
   assert.match(page, />今日運勢</);
   assert.match(page, /今天該注意什麼/);
-  assert.match(page, /生活提醒・輕鬆參考/);
+  assert.match(page, /生日運勢・輕鬆參考/);
 });
 
 test("右上日期與今日運勢使用台北時區的動態日期", async () => {
@@ -63,4 +63,15 @@ test("右上日期與今日運勢使用台北時區的動態日期", async () =>
   assert.match(page, /timeZone: "Asia\/Taipei"/);
   assert.match(page, /<span className="date">\{currentDay\.topbar\}<\/span>/);
   assert.doesNotMatch(page, /2026 年 7 月 29 日・星期三/);
+});
+
+test("組織聯絡資訊顯示生日且未提供者標示收集中", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /email: "emilychang@ai-zens\.com", birthday: "06-10"/);
+  assert.match(page, /email: "garyshih@ai-zens\.com", birthday: "07-23"/);
+  assert.match(page, /email: "jameschien@ai-zens\.com", birthday: null/);
+  assert.match(page, /<dt>生日<\/dt>/);
+  assert.match(page, /if \(!birthday\) return "收集中"/);
+  assert.match(page, /signedInOrgPerson\?\.birthday \?\? email/);
 });

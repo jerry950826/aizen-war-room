@@ -5,7 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 type View = "dashboard" | "fortune" | "password" | "permissions" | "people";
 type ServiceId = "leave" | "claims" | "instructors";
 type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
-type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string };
+type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string; birthday: string | null };
 
 const services: Array<{
   id: ServiceId;
@@ -91,18 +91,18 @@ const initialMembers: Member[] = [
 ];
 
 const organizationPeople: OrgPerson[] = [
-  { id: "maggie", department: "總經理室", level: 1, title: "總經理", english: "Maggie", name: "房美華", phone: "0937-138902", email: "maggiefang@ai-zens.com" },
-  { id: "emily", department: "技術部", level: 2, title: "前端工程師", english: "Emily", name: "張芷瑄", phone: "0970-672188", email: "emilychang@ai-zens.com" },
-  { id: "jerry", department: "技術部", level: 2, title: "前端工程師", english: "Jerry", name: "張廷", phone: "0975-750220", email: "jerrychang@ai-zens.com" },
-  { id: "james", department: "技術部", level: 2, title: "後端工程師", english: "James", name: "簡侑俊", phone: "0968-813952", email: "jameschien@ai-zens.com" },
-  { id: "pearl", department: "設計部", level: 2, title: "產品設計師", english: "Pearl", name: "陳品樺", phone: "0979-635252", email: "pearlchen@ai-zens.com" },
-  { id: "blair", department: "設計部", level: 2, title: "數位設計師", english: "Blair", name: "彭愛媛", phone: "0988-506226", email: "blairpeng@ai-zens.com" },
-  { id: "sean", department: "業務部", level: 2, title: "資深業務經理", english: "Sean", name: "張智翔", phone: "0985-699592", email: "seanchang@ai-zens.com" },
-  { id: "joanne", department: "業務部", level: 2, title: "資深業務經理", english: "Joanne", name: "陳靜宜", phone: "0912-582956", email: "joannechen@ai-zens.com" },
-  { id: "cat", department: "行銷部", level: 2, title: "行銷主任", english: "Cat", name: "陳瑾虹", phone: "0972-866530", email: "catchen@ai-zens.com" },
-  { id: "gary", department: "行銷部", level: 3, title: "行銷專員", english: "Gary", name: "石孟玄", phone: "0912-818915", email: "garyshih@ai-zens.com" },
-  { id: "sharlene", department: "行銷部", level: 3, title: "內容行銷專員", english: "Sharlene", name: "潘欣芸", phone: "0958-031793", email: "sinyunpan@ai-zens.com" },
-  { id: "rita", department: "企劃部", level: 2, title: "企劃兼行政", english: "Rita", name: "謝雨如", phone: "0927-765167", email: "ritahsieh@ai-zens.com" },
+  { id: "maggie", department: "總經理室", level: 1, title: "總經理", english: "Maggie", name: "房美華", phone: "0937-138902", email: "maggiefang@ai-zens.com", birthday: "12-01" },
+  { id: "emily", department: "技術部", level: 2, title: "前端工程師", english: "Emily", name: "張芷瑄", phone: "0970-672188", email: "emilychang@ai-zens.com", birthday: "06-10" },
+  { id: "jerry", department: "技術部", level: 2, title: "前端工程師", english: "Jerry", name: "張廷", phone: "0975-750220", email: "jerrychang@ai-zens.com", birthday: "08-26" },
+  { id: "james", department: "技術部", level: 2, title: "後端工程師", english: "James", name: "簡侑俊", phone: "0968-813952", email: "jameschien@ai-zens.com", birthday: null },
+  { id: "pearl", department: "設計部", level: 2, title: "產品設計師", english: "Pearl", name: "陳品樺", phone: "0979-635252", email: "pearlchen@ai-zens.com", birthday: "08-01" },
+  { id: "blair", department: "設計部", level: 2, title: "數位設計師", english: "Blair", name: "彭愛媛", phone: "0988-506226", email: "blairpeng@ai-zens.com", birthday: "07-12" },
+  { id: "sean", department: "業務部", level: 2, title: "資深業務經理", english: "Sean", name: "張智翔", phone: "0985-699592", email: "seanchang@ai-zens.com", birthday: null },
+  { id: "joanne", department: "業務部", level: 2, title: "資深業務經理", english: "Joanne", name: "陳靜宜", phone: "0912-582956", email: "joannechen@ai-zens.com", birthday: null },
+  { id: "cat", department: "行銷部", level: 2, title: "行銷主任", english: "Cat", name: "陳瑾虹", phone: "0972-866530", email: "catchen@ai-zens.com", birthday: "02-04" },
+  { id: "gary", department: "行銷部", level: 3, title: "行銷專員", english: "Gary", name: "石孟玄", phone: "0912-818915", email: "garyshih@ai-zens.com", birthday: "07-23" },
+  { id: "sharlene", department: "行銷部", level: 3, title: "內容行銷專員", english: "Sharlene", name: "潘欣芸", phone: "0958-031793", email: "sinyunpan@ai-zens.com", birthday: "03-17" },
+  { id: "rita", department: "企劃部", level: 2, title: "企劃兼行政", english: "Rita", name: "謝雨如", phone: "0927-765167", email: "ritahsieh@ai-zens.com", birthday: "10-10" },
 ];
 
 const fortuneThemes = [
@@ -146,6 +146,12 @@ function taipeiToday() {
   };
 }
 
+function birthdayText(birthday: string | null) {
+  if (!birthday) return "收集中";
+  const [month, day] = birthday.split("-").map(Number);
+  return `${month} 月 ${day} 日`;
+}
+
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loggedInRole, setLoggedInRole] = useState<Member["role"]>("一般成員");
@@ -184,9 +190,14 @@ export default function Home() {
   };
   const isAdmin = loggedInRole === "管理員";
   const currentDay = taipeiToday();
+  const signedInMember = members.find((member) => member.email === email);
+  const signedInOrgPerson = organizationPeople.find(
+    (person) => person.email === email || signedInMember?.name.startsWith(`${person.english} `),
+  );
   const fortune = useMemo(() => {
     const dayKey = currentDay.key;
-    const seed = dailySeed(`${email}:${dayKey}`);
+    const fortuneIdentity = signedInOrgPerson?.birthday ?? email;
+    const seed = dailySeed(`${fortuneIdentity}:${dayKey}`);
     const theme = fortuneThemes[seed % fortuneThemes.length];
     return {
       ...theme,
@@ -199,8 +210,9 @@ export default function Home() {
       color: ["天空藍", "森林綠", "暖橘色", "米白色", "深海藍"][seed % 5],
       number: seed % 9 + 1,
       bestTime: ["09:30–11:00", "10:00–11:30", "13:30–15:00", "15:00–16:30", "16:00–17:30"][seed % 5],
+      basis: signedInOrgPerson?.birthday ? "生日運勢・輕鬆參考" : "生日收集中・暫以帳號生成",
     };
-  }, [email, currentDay.key, currentDay.fortune]);
+  }, [email, currentDay.key, currentDay.fortune, signedInOrgPerson?.birthday]);
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -480,7 +492,7 @@ export default function Home() {
           <div className="page fortune-page">
             <div className="page-heading">
               <div><p className="kicker">DAILY FORTUNE</p><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
-              <span className="fortune-disclaimer">生活提醒・輕鬆參考</span>
+              <span className="fortune-disclaimer">{fortune.basis}</span>
             </div>
             <section className="fortune-hero">
               <div className="fortune-score"><span>今日整體運勢</span><strong>{fortune.overall}</strong><small>/ 100</small></div>
@@ -683,6 +695,7 @@ export default function Home() {
             <dl>
               <div><dt>公司信箱</dt><dd><a href={`mailto:${organizationMember(selectedOrgPerson)?.email ?? selectedOrgPerson.email}`}>{organizationMember(selectedOrgPerson)?.email ?? selectedOrgPerson.email}</a></dd></div>
               <div><dt>聯絡手機</dt><dd><a href={`tel:${selectedOrgPerson.phone}`}>{selectedOrgPerson.phone}</a></dd></div>
+              <div><dt>生日</dt><dd className={selectedOrgPerson.birthday ? "" : "collecting"}>{birthdayText(selectedOrgPerson.birthday)}</dd></div>
             </dl>
             <button className="primary-button" type="button" onClick={() => setSelectedOrgPerson(null)}>關閉</button>
           </section>
