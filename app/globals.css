@@ -161,18 +161,24 @@ button { color: inherit; }
 .invite-card input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(0,115,223,.09); }
 .invite-card .primary-button { width: 100%; }
 .member-card { min-width: 0; overflow: hidden; }
-.member-list { min-width: 660px; }
-.member-row { display: grid; grid-template-columns: 42px minmax(150px, 1.8fr) 80px 50px 58px 65px; gap: 11px; align-items: center; min-height: 76px; padding: 0 25px; border-bottom: 1px solid #eff0f4; }
+.member-list { min-width: 760px; }
+.member-row { display: grid; grid-template-columns: 42px minmax(190px, 1.8fr) 80px 50px 58px 78px 55px; gap: 11px; align-items: center; min-height: 76px; padding: 0 25px; border-bottom: 1px solid #eff0f4; }
 .member-avatar { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: #e8f4ff; color: var(--purple); font-size: 13px; font-weight: 900; }
 .member-identity { min-width: 0; }
 .member-identity b, .member-identity small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .member-identity b { font-size: 12px; }
 .member-identity small { margin-top: 5px; color: #9198a7; font-size: 9px; }
+.member-identity.editing { display: grid; gap: 5px; }
+.member-identity.editing input { width: 100%; min-width: 0; height: 28px; padding: 0 8px; border: 1px solid #d8e0e8; border-radius: 6px; font-size: 10px; outline: 0; }
+.member-identity.editing input:focus { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(0,115,223,.09); }
 .role-badge { justify-self: start; padding: 5px 8px; border-radius: 12px; background: #f1f3f5; color: #747c8a; font-size: 9px; font-weight: 800; }
 .role-badge.admin { background: #e8f4ff; color: var(--purple); }
 .access-switch { justify-self: center; }
 .access-status { color: #969dab; font-size: 9px; font-weight: 800; }
 .access-status.enabled { color: #148064; }
+.edit-member, .member-edit-actions button { border: 0; background: transparent; color: var(--purple); font-size: 9px; font-weight: 800; cursor: pointer; }
+.member-edit-actions { display: flex; gap: 8px; }
+.member-edit-actions button:last-child { color: #818997; }
 .remove-member { justify-self: end; border: 0; background: transparent; color: #e03f3f; font-size: 9px; font-weight: 800; cursor: pointer; }
 .remove-member:disabled { color: #a8adb7; cursor: not-allowed; }
 

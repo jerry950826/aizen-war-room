@@ -12,19 +12,48 @@ export async function POST(request: Request) {
   const auth = await requireSession(request, true);
   if (!auth) return Response.json({ error: "需要管理員權限" }, { status: 403 });
   const body = await request.json() as {
-    action: "add" | "toggle" | "remove" | "permissions";
+    action: "add" | "edit" | "toggle" | "remove" | "permissions";
     email: string;
     name?: string;
+    newEmail?: string;
     active?: boolean;
     permissions?: { leave: boolean; claims: boolean; instructors: boolean };
   };
   const email = body.email.trim().toLowerCase();
+  const name = body.name?.trim() ?? "";
+  const validEmail = /^[^\s@]+@ai-zens\.com$/i;
+  if (!validEmail.test(email)) {
+    return Response.json({ error: "請使用有效的公司信箱" }, { status: 400 });
+  }
   if (body.action === "add") {
+    if (!name) return Response.json({ error: "請輸入姓名" }, { status: 400 });
+    const existing = await auth.db.prepare("SELECT 1 AS found FROM members WHERE lower(email)=?")
+      .bind(email).first();
+    if (existing) return Response.json({ error: "此公司信箱已在名單中" }, { status: 409 });
     await auth.db.batch([
       auth.db.prepare("INSERT INTO members (email,name,role,active,password_hash) VALUES (?,?,?,?,?)")
-        .bind(email, body.name || email.split("@")[0], "一般成員", 1, await sha256("Ab123456")),
+        .bind(email, name, "一般成員", 1, await sha256("Ab123456")),
       auth.db.prepare("INSERT INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?)")
         .bind(email, 1, 1, 1),
+    ]);
+  } else if (body.action === "edit") {
+    const newEmail = body.newEmail?.trim().toLowerCase() ?? "";
+    if (!name) return Response.json({ error: "請輸入姓名" }, { status: 400 });
+    if (!validEmail.test(newEmail)) {
+      return Response.json({ error: "請使用有效的公司信箱" }, { status: 400 });
+    }
+    const member = await auth.db.prepare("SELECT role FROM members WHERE email=?")
+      .bind(email).first<{ role: string }>();
+    if (!member) return Response.json({ error: "找不到此人員" }, { status: 404 });
+    if (newEmail !== email) {
+      const existing = await auth.db.prepare("SELECT 1 AS found FROM members WHERE lower(email)=?")
+        .bind(newEmail).first();
+      if (existing) return Response.json({ error: "新信箱已被其他人使用" }, { status: 409 });
+    }
+    await auth.db.batch([
+      auth.db.prepare("UPDATE members SET email=?,name=? WHERE email=?").bind(newEmail, name, email),
+      auth.db.prepare("UPDATE permissions SET email=? WHERE email=?").bind(newEmail, email),
+      auth.db.prepare("UPDATE sessions SET email=? WHERE email=?").bind(newEmail, email),
     ]);
   } else if (body.action === "toggle") {
     await auth.db.prepare("UPDATE members SET active=? WHERE email=?").bind(body.active ? 1 : 0, email).run();

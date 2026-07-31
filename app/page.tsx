@@ -84,6 +84,7 @@ const initialMembers: Member[] = [
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedInRole, setLoggedInRole] = useState<Member["role"]>("一般成員");
   const [view, setView] = useState<View>("dashboard");
   const [user, setUser] = useState("maggie");
   const [email, setEmail] = useState("maggiefang@ai-zens.com");
@@ -99,7 +100,11 @@ export default function Home() {
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
+  const [newMemberName, setNewMemberName] = useState("");
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [editingEmail, setEditingEmail] = useState("");
+  const [editMemberName, setEditMemberName] = useState("");
+  const [editMemberEmail, setEditMemberEmail] = useState("");
   const [saved, setSaved] = useState("");
   const [toast, setToast] = useState("");
   const visibleServices = useMemo(
@@ -112,7 +117,7 @@ export default function Home() {
     department: "Aizen",
     title: "一般成員",
   };
-  const isAdmin = ["maggie", "rita", "jerry"].includes(user);
+  const isAdmin = loggedInRole === "管理員";
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -175,8 +180,9 @@ export default function Home() {
         setLoginError(result?.error || "帳號或密碼不正確，或此信箱未開放。");
         return;
       }
-      const data = await response.json() as { token: string; name: string };
+      const data = await response.json() as { token: string; name: string; role: Member["role"] };
       setToken(data.token);
+      setLoggedInRole(data.role);
       setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
       await loadSharedState(data.token);
       setLoggedIn(true);
@@ -213,19 +219,50 @@ export default function Home() {
   const addMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedEmail = newMemberEmail.trim().toLowerCase();
-    if (!normalizedEmail || members.some((member) => member.email === normalizedEmail)) {
-      notify("請輸入尚未加入的有效信箱");
+    const normalizedName = newMemberName.trim();
+    if (!normalizedName || !normalizedEmail || members.some((member) => member.email === normalizedEmail)) {
+      notify("請輸入尚未加入的有效姓名與信箱");
       return;
     }
-    const name = normalizedEmail.split("@")[0].replace(/[._-]/g, " ");
-    await fetch("/api/control-state", {
+    const response = await fetch("/api/control-state", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: "add", email: normalizedEmail, name: name.replace(/\b\w/g, (letter) => letter.toUpperCase()) }),
+      body: JSON.stringify({ action: "add", email: normalizedEmail, name: normalizedName }),
     });
+    const result = await response.json().catch(() => null) as { error?: string } | null;
+    if (!response.ok) return notify(result?.error || "新增人員失敗");
     await loadSharedState(token);
+    setNewMemberName("");
     setNewMemberEmail("");
     notify(`已允許 ${normalizedEmail} 登入`);
+  };
+
+  const startEditingMember = (member: Member) => {
+    setEditingEmail(member.email);
+    setEditMemberName(member.name);
+    setEditMemberEmail(member.email);
+  };
+
+  const saveMember = async (member: Member) => {
+    const normalizedName = editMemberName.trim();
+    const normalizedEmail = editMemberEmail.trim().toLowerCase();
+    if (!normalizedName || !normalizedEmail) return notify("姓名與公司信箱不可空白");
+    const response = await fetch("/api/control-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        action: "edit",
+        email: member.email,
+        newEmail: normalizedEmail,
+        name: normalizedName,
+      }),
+    });
+    const result = await response.json().catch(() => null) as { error?: string } | null;
+    if (!response.ok) return notify(result?.error || "人員資料更新失敗");
+    if (email === member.email) setEmail(normalizedEmail);
+    setEditingEmail("");
+    await loadSharedState(token);
+    notify(`已更新 ${normalizedName} 的資料`);
   };
 
   if (!loggedIn) {
@@ -414,7 +451,9 @@ export default function Home() {
             <section className="people-layout">
               <form className="invite-card" onSubmit={addMember}>
                 <span className="invite-icon">＋</span>
-                <div><h2>新增可存取人員</h2><p>輸入已存在於正式系統的公司信箱，加入後即可登入戰情室。</p></div>
+                <div><h2>新增可存取人員</h2><p>輸入姓名及已存在於正式系統的公司信箱，加入後即可登入戰情室。</p></div>
+                <label htmlFor="new-member-name">姓名</label>
+                <input id="new-member-name" type="text" value={newMemberName} onChange={(event) => setNewMemberName(event.target.value)} placeholder="例如：Emily 張芷瑄" required />
                 <label htmlFor="new-member-email">公司信箱</label>
                 <input id="new-member-email" type="email" value={newMemberEmail} onChange={(event) => setNewMemberEmail(event.target.value)} placeholder="name@ai-zens.com" required />
                 <button className="primary-button" type="submit">加入允許名單</button>
@@ -429,7 +468,14 @@ export default function Home() {
                   {members.map((member) => (
                     <div className="member-row" key={member.email}>
                       <span className="member-avatar">{member.name[0].toUpperCase()}</span>
-                      <span className="member-identity"><b>{member.name}</b><small>{member.email}</small></span>
+                      {editingEmail === member.email ? (
+                        <span className="member-identity editing">
+                          <input aria-label={`${member.name} 姓名`} value={editMemberName} onChange={(event) => setEditMemberName(event.target.value)} />
+                          <input aria-label={`${member.name} 公司信箱`} type="email" value={editMemberEmail} onChange={(event) => setEditMemberEmail(event.target.value)} />
+                        </span>
+                      ) : (
+                        <span className="member-identity"><b>{member.name}</b><small>{member.email}</small></span>
+                      )}
                       <span className={`role-badge ${member.role === "管理員" ? "admin" : ""}`}>{member.role}</span>
                       <label className="switch access-switch" aria-label={`${member.email} 登入權限`}>
                           <input type="checkbox" checked={member.active} onChange={async () => {
@@ -439,6 +485,14 @@ export default function Home() {
                         <span />
                       </label>
                       <span className={`access-status ${member.active ? "enabled" : ""}`}>{member.active ? "可登入" : "已停用"}</span>
+                      {editingEmail === member.email ? (
+                        <span className="member-edit-actions">
+                          <button type="button" onClick={() => saveMember(member)}>儲存</button>
+                          <button type="button" onClick={() => setEditingEmail("")}>取消</button>
+                        </span>
+                      ) : (
+                        <button className="edit-member" type="button" onClick={() => startEditingMember(member)}>編輯</button>
+                      )}
                       <button
                         className="remove-member"
                         type="button"
