@@ -122,6 +122,48 @@ const fortuneAdvice = [
   "注意久坐與用眼時間，中午前後安排短暫伸展。",
 ];
 
+const cosmicMessages = [
+  "宇宙今天不催你，但它希望你別再拖那件五分鐘就能完成的小事。",
+  "你不需要一次看見整條路，先把下一步走漂亮就夠了。",
+  "今天的好運藏在一次主動開口、一次耐心確認，和一杯剛剛好的飲料裡。",
+  "別急著證明自己是對的，讓結果替你說話會更有力量。",
+  "某個看似普通的回覆，可能正是今天故事轉彎的地方。",
+  "今天適合相信直覺，但簽名、金額與日期還是要相信第二次檢查。",
+];
+
+const dailyMissions = [
+  "在中午前完成一件拖了兩天以上的小任務。",
+  "主動稱讚一位同事，而且要說出具體原因。",
+  "整理桌面或電腦下載資料夾十分鐘，替好運清出空間。",
+  "把今天最重要的事寫成一句話，完成前先不新增待辦。",
+  "下午三點前喝完一杯水，起身走動三分鐘。",
+  "傳一則簡短訊息，向最近幫過你的人說聲謝謝。",
+];
+
+const zodiacSigns = [
+  { name: "摩羯座", icon: "♑", from: 1222, to: 119, element: "土象" },
+  { name: "水瓶座", icon: "♒", from: 120, to: 218, element: "風象" },
+  { name: "雙魚座", icon: "♓", from: 219, to: 320, element: "水象" },
+  { name: "牡羊座", icon: "♈", from: 321, to: 419, element: "火象" },
+  { name: "金牛座", icon: "♉", from: 420, to: 520, element: "土象" },
+  { name: "雙子座", icon: "♊", from: 521, to: 621, element: "風象" },
+  { name: "巨蟹座", icon: "♋", from: 622, to: 722, element: "水象" },
+  { name: "獅子座", icon: "♌", from: 723, to: 822, element: "火象" },
+  { name: "處女座", icon: "♍", from: 823, to: 922, element: "土象" },
+  { name: "天秤座", icon: "♎", from: 923, to: 1023, element: "風象" },
+  { name: "天蠍座", icon: "♏", from: 1024, to: 1122, element: "水象" },
+  { name: "射手座", icon: "♐", from: 1123, to: 1221, element: "火象" },
+];
+
+function zodiacFor(birthday: string | null) {
+  if (!birthday) return { name: "神秘星座", icon: "✦", element: "等待解鎖" };
+  const [month, day] = birthday.split("-").map(Number);
+  const value = month * 100 + day;
+  return zodiacSigns.find((sign) =>
+    sign.from > sign.to ? value >= sign.from || value <= sign.to : value >= sign.from && value <= sign.to,
+  ) ?? { name: "神秘星座", icon: "✦", element: "等待解鎖" };
+}
+
 function dailySeed(value: string) {
   let seed = 0;
   for (const character of value) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
@@ -194,6 +236,7 @@ export default function Home() {
   const signedInOrgPerson = organizationPeople.find(
     (person) => person.email === email || signedInMember?.name.startsWith(`${person.english} `),
   );
+  const zodiac = zodiacFor(signedInOrgPerson?.birthday ?? null);
   const fortune = useMemo(() => {
     const dayKey = currentDay.key;
     const fortuneIdentity = signedInOrgPerson?.birthday ?? email;
@@ -211,6 +254,13 @@ export default function Home() {
       number: seed % 9 + 1,
       bestTime: ["09:30–11:00", "10:00–11:30", "13:30–15:00", "15:00–16:30", "16:00–17:30"][seed % 5],
       basis: signedInOrgPerson?.birthday ? "生日運勢・輕鬆參考" : "生日收集中・暫以帳號生成",
+      keyword: ["果斷", "細心", "連結", "整理", "彈性", "勇氣"][(seed >>> 2) % 6],
+      avoid: ["衝動回覆", "忘記存檔", "過度承諾", "空腹開會", "最後一刻", "想太多"][(seed >>> 6) % 6],
+      message: cosmicMessages[(seed >>> 9) % cosmicMessages.length],
+      mission: dailyMissions[(seed >>> 13) % dailyMissions.length],
+      goodFor: ["整理提案", "主動溝通", "處理數字", "安排新計畫", "收尾舊任務", "認識新夥伴"][(seed >>> 15) % 6],
+      recharge: ["無糖茶", "散步十分鐘", "喜歡的音樂", "曬一下太陽", "清爽水果", "深呼吸五次"][(seed >>> 18) % 6],
+      socialCode: ["先聽再說", "直接但溫柔", "多問一句", "記得回覆", "保持幽默", "給彼此空間"][(seed >>> 21) % 6],
     };
   }, [email, currentDay.key, currentDay.fortune, signedInOrgPerson?.birthday]);
 
@@ -496,8 +546,16 @@ export default function Home() {
             </div>
             <section className="fortune-hero">
               <div className="fortune-score"><span>今日整體運勢</span><strong>{fortune.overall}</strong><small>/ 100</small></div>
-              <div className="fortune-summary"><span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{fortune.summary}</p></div>
-              <div className="fortune-orbit"><i /><b>☀</b></div>
+              <div className="fortune-summary">
+                <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・今日關鍵字：{fortune.keyword}</small></span></div>
+                <span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{fortune.summary}</p>
+              </div>
+              <div className="fortune-orbit"><i /><b>{zodiac.icon}</b><span>{zodiac.name}</span></div>
+            </section>
+            <section className="fortune-chips" aria-label="今日能量提示">
+              <div><span>✓ 今日宜</span><strong>{fortune.goodFor}</strong></div>
+              <div><span>☕ 能量補給</span><strong>{fortune.recharge}</strong></div>
+              <div><span>⌁ 社交暗號</span><strong>{fortune.socialCode}</strong></div>
             </section>
             <section className="fortune-metrics">
               {[
@@ -525,6 +583,20 @@ export default function Home() {
                   <div><dt>幸運數字</dt><dd>{fortune.number}</dd></div>
                   <div><dt>順勢時段</dt><dd>{fortune.bestTime}</dd></div>
                 </dl>
+              </article>
+            </section>
+            <section className="cosmic-grid">
+              <article className="mission-card">
+                <div className="cosmic-icon">✓</div>
+                <div><span>TODAY&apos;S QUEST</span><h2>今日小任務</h2><p>{fortune.mission}</p></div>
+              </article>
+              <article className="warning-card">
+                <div className="cosmic-icon">!</div>
+                <div><span>COSMIC RADAR</span><h2>今日避雷</h2><p>{fortune.avoid}</p></div>
+              </article>
+              <article className="whisper-card">
+                <span>✦ 宇宙悄悄話</span>
+                <blockquote>「{fortune.message}」</blockquote>
               </article>
             </section>
           </div>

@@ -75,3 +75,18 @@ test("組織聯絡資訊顯示生日且未提供者標示收集中", async () =>
   assert.match(page, /if \(!birthday\) return "收集中"/);
   assert.match(page, /signedInOrgPerson\?\.birthday \?\? email/);
 });
+
+test("生日可判斷星座並顯示趣味運勢內容", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /function zodiacFor\(birthday: string \| null\)/);
+  assert.match(page, /name: "雙子座", icon: "♊"/);
+  assert.match(page, /name: "獅子座", icon: "♌"/);
+  assert.match(page, /今日小任務/);
+  assert.match(page, /今日避雷/);
+  assert.match(page, /宇宙悄悄話/);
+  assert.match(page, /今日關鍵字/);
+  assert.match(page, /今日宜/);
+  assert.match(page, /能量補給/);
+  assert.match(page, /社交暗號/);
+});
