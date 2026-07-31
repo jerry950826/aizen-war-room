@@ -150,6 +150,37 @@ button { color: inherit; }
 .toast span { color: #64dfb3; }
 .login-error { margin: 16px 0 4px; padding: 11px 13px; border: 1px solid #f2b8b5; border-radius: 9px; background: #fff3f2; color: #a12b24; font-size: 13px; line-height: 1.5; }
 .member-total { padding: 10px 15px; border: 1px solid #d8e7f4; border-radius: 20px; background: white; color: #5d7184; font-size: 11px; }
+.organization-chart { position: relative; padding: 5px 0 36px; }
+.organization-leader { display: flex; justify-content: center; }
+.organization-trunk { width: 2px; height: 34px; margin: auto; background: #cdddeb; }
+.organization-departments { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.organization-departments::before { content: ""; position: absolute; top: 0; left: 10%; right: 10%; height: 2px; background: #cdddeb; }
+.organization-department { position: relative; min-width: 0; padding-top: 24px; }
+.organization-branch { position: absolute; top: 0; left: 50%; width: 2px; height: 24px; background: #cdddeb; }
+.organization-department > header { display: flex; align-items: center; justify-content: space-between; padding: 13px 12px; border: 1px solid #dfe7ee; border-radius: 11px 11px 0 0; background: #f4f9fd; }
+.organization-department h2 { margin: 0; font-size: 13px; }
+.organization-department header span { color: #8190a0; font-size: 9px; }
+.organization-department > div:last-child { display: grid; gap: 8px; padding: 9px; border: 1px solid #e3e9ef; border-top: 0; border-radius: 0 0 11px 11px; background: white; }
+.organization-person { width: 100%; min-width: 0; padding: 11px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; text-align: left; border: 1px solid #e6ebf0; border-radius: 9px; background: white; color: var(--ink); cursor: pointer; transition: .18s ease; }
+.organization-person:hover, .organization-person:focus-visible { transform: translateY(-1px); border-color: #69aef0; box-shadow: 0 7px 18px rgba(0,86,164,.1); outline: 0; }
+.organization-person b, .organization-person span { grid-column: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.organization-person b { font-size: 10px; }
+.organization-person span { margin-top: 5px; color: #8793a2; font-size: 8px; }
+.organization-person small { grid-column: 2; grid-row: 1 / 3; align-self: center; color: var(--purple); font-size: 8px; }
+.organization-person.featured { width: 250px; padding: 16px 18px; border-color: #0073df; background: linear-gradient(135deg, #0a84f3, #0065c4); color: white; box-shadow: 0 10px 25px rgba(0,85,164,.2); }
+.organization-person.featured span, .organization-person.featured small { color: #dceeff; }
+.organization-admin { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--line); }
+.organization-modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: rgba(4,31,55,.7); }
+.organization-modal { position: relative; width: min(430px, 100%); padding: 32px; border-radius: 16px; background: white; box-shadow: 0 24px 70px rgba(0,25,49,.25); }
+.organization-modal h2 { margin: 0 0 7px; font-size: 24px; }
+.organization-modal > p:not(.kicker) { margin: 0; color: var(--muted); font-size: 12px; }
+.organization-modal dl { display: grid; gap: 10px; margin: 24px 0; }
+.organization-modal dl > div { padding: 13px 15px; border-radius: 9px; background: #f5f9fc; }
+.organization-modal dt { margin-bottom: 5px; color: #8c97a4; font-size: 9px; }
+.organization-modal dd { margin: 0; font-size: 12px; font-weight: 700; }
+.organization-modal a { color: #244e72; text-decoration: none; }
+.organization-modal .primary-button { width: 100%; }
+.organization-modal-close { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; color: #7f8994; font-size: 24px; cursor: pointer; }
 .people-layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
 .invite-card, .member-card { background: white; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 35px rgba(28,35,67,.05); }
 .invite-card { padding: 27px; display: flex; flex-direction: column; }
@@ -204,6 +235,9 @@ button { color: inherit; }
   .narrow-page { margin: auto; }
   .permission-table { overflow-x: auto; }
   .people-layout { grid-template-columns: 1fr; }
+  .organization-departments { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .organization-departments::before, .organization-branch { display: none; }
+  .organization-department { padding-top: 0; }
   .invite-card { display: grid; grid-template-columns: 50px 1fr; gap: 0 14px; }
   .invite-card > label, .invite-card > input, .invite-card > button { grid-column: 2; }
   .invite-card h2 { margin-top: 3px; }
@@ -239,6 +273,7 @@ button { color: inherit; }
   .form-actions { display: flex; }
   .save-button { min-width: auto; padding: 0 14px; }
   .people-layout { display: block; }
+  .organization-departments { grid-template-columns: 1fr; }
   .invite-card { display: block; margin-bottom: 18px; }
   .member-card { overflow-x: auto; }
   .member-total { white-space: nowrap; }

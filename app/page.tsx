@@ -5,6 +5,7 @@ import { FormEvent, useMemo, useState } from "react";
 type View = "dashboard" | "password" | "permissions" | "people";
 type ServiceId = "leave" | "claims" | "instructors";
 type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
+type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string };
 
 const services: Array<{
   id: ServiceId;
@@ -80,6 +81,28 @@ const initialMembers: Member[] = [
   { email: "jerrychang@ai-zens.com", name: "Jerry 張廷", role: "管理員", active: true },
   { email: "emilychang@ai-zens.com", name: "Emily 張芷瑄", role: "一般成員", active: true },
   { email: "jameschien@ai-zens.com", name: "James 簡侑俊", role: "一般成員", active: true },
+  { email: "pearlchen@ai-zens.com", name: "Pearl 陳品樺", role: "一般成員", active: true },
+  { email: "blairpeng@ai-zens.com", name: "Blair 彭愛媛", role: "一般成員", active: true },
+  { email: "seanchang@ai-zens.com", name: "Sean 張智翔", role: "一般成員", active: true },
+  { email: "joannechen@ai-zens.com", name: "Joanne 陳靜宜", role: "一般成員", active: true },
+  { email: "catchen@ai-zens.com", name: "Cat 陳瑾虹", role: "一般成員", active: true },
+  { email: "garyshih@ai-zens.com", name: "Gary 石孟玄", role: "一般成員", active: true },
+  { email: "sinyunpan@ai-zens.com", name: "Sharlene 潘欣芸", role: "一般成員", active: true },
+];
+
+const organizationPeople: OrgPerson[] = [
+  { id: "maggie", department: "總經理室", level: 1, title: "總經理", english: "Maggie", name: "房美華", phone: "0937-138902", email: "maggiefang@ai-zens.com" },
+  { id: "emily", department: "技術部", level: 2, title: "前端工程師", english: "Emily", name: "張芷瑄", phone: "0970-672188", email: "emilychang@ai-zens.com" },
+  { id: "jerry", department: "技術部", level: 2, title: "前端工程師", english: "Jerry", name: "張廷", phone: "0975-750220", email: "jerrychang@ai-zens.com" },
+  { id: "james", department: "技術部", level: 2, title: "後端工程師", english: "James", name: "簡侑俊", phone: "0968-813952", email: "jameschien@ai-zens.com" },
+  { id: "pearl", department: "設計部", level: 2, title: "產品設計師", english: "Pearl", name: "陳品樺", phone: "0979-635252", email: "pearlchen@ai-zens.com" },
+  { id: "blair", department: "設計部", level: 2, title: "數位設計師", english: "Blair", name: "彭愛媛", phone: "0988-506226", email: "blairpeng@ai-zens.com" },
+  { id: "sean", department: "業務部", level: 2, title: "資深業務經理", english: "Sean", name: "張智翔", phone: "0985-699592", email: "seanchang@ai-zens.com" },
+  { id: "joanne", department: "業務部", level: 2, title: "資深業務經理", english: "Joanne", name: "陳靜宜", phone: "0912-582956", email: "joannechen@ai-zens.com" },
+  { id: "cat", department: "行銷部", level: 2, title: "行銷主任", english: "Cat", name: "陳瑾虹", phone: "0972-866530", email: "catchen@ai-zens.com" },
+  { id: "gary", department: "行銷部", level: 3, title: "行銷專員", english: "Gary", name: "石孟玄", phone: "0912-818915", email: "garyshih@ai-zens.com" },
+  { id: "sharlene", department: "行銷部", level: 3, title: "內容行銷專員", english: "Sharlene", name: "潘欣芸", phone: "0958-031793", email: "sinyunpan@ai-zens.com" },
+  { id: "rita", department: "企劃部", level: 2, title: "企劃兼行政", english: "Rita", name: "謝雨如", phone: "0927-765167", email: "ritahsieh@ai-zens.com" },
 ];
 
 export default function Home() {
@@ -105,6 +128,7 @@ export default function Home() {
   const [editingEmail, setEditingEmail] = useState("");
   const [editMemberName, setEditMemberName] = useState("");
   const [editMemberEmail, setEditMemberEmail] = useState("");
+  const [selectedOrgPerson, setSelectedOrgPerson] = useState<OrgPerson | null>(null);
   const [saved, setSaved] = useState("");
   const [toast, setToast] = useState("");
   const visibleServices = useMemo(
@@ -265,6 +289,9 @@ export default function Home() {
     notify(`已更新 ${normalizedName} 的資料`);
   };
 
+  const organizationMember = (person: OrgPerson) =>
+    members.find((member) => member.email === person.email || member.name.startsWith(`${person.english} `));
+
   if (!loggedIn) {
     return (
       <main className="login-page">
@@ -333,7 +360,7 @@ export default function Home() {
           <p>帳號設定</p>
           <button className={view === "password" ? "active" : ""} onClick={() => setView("password")}><span>⌁</span>修改登入密碼</button>
           {isAdmin && <button className={view === "permissions" ? "active" : ""} onClick={() => setView("permissions")}><span>♙</span>頁面權限管控</button>}
-          {isAdmin && <button className={view === "people" ? "active" : ""} onClick={() => setView("people")}><span>♧</span>人員存取管理</button>}
+          <button className={view === "people" ? "active" : ""} onClick={() => setView("people")}><span>♧</span>公司組織圖</button>
         </nav>
         <div className="sidebar-bottom">
           <div className="user-chip">
@@ -347,7 +374,7 @@ export default function Home() {
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "人員存取管理"}</p>
+            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "公司組織圖"}</p>
           </div>
           <div className="top-actions">
             <button className="icon-button" aria-label="通知">♢<i /></button>
@@ -445,10 +472,39 @@ export default function Home() {
         {view === "people" && (
           <div className="page">
             <div className="page-heading">
-              <div><p className="kicker">MEMBER ACCESS</p><h1>人員存取管理</h1><p>Maggie、Rita、Jerry 可管理哪些正式公司帳號能進入戰情室。</p></div>
-              <span className="member-total">{members.filter((member) => member.active).length} 位可登入</span>
+              <div><p className="kicker">COMPANY ORGANIZATION</p><h1>公司組織圖</h1><p>查看公司部門、人員職稱與聯絡方式。</p></div>
+              <span className="member-total">共 {organizationPeople.length} 位夥伴</span>
             </div>
-            <section className="people-layout">
+            <section className="organization-chart">
+              <div className="organization-leader">
+                {organizationPeople.filter((person) => person.level === 1).map((person) => {
+                  const member = organizationMember(person);
+                  return <button type="button" className="organization-person featured" key={person.id} onClick={() => setSelectedOrgPerson(person)}><b>{member?.name ?? `${person.english} ${person.name}`}</b><span>{person.title}</span><small>查看聯絡資訊</small></button>;
+                })}
+              </div>
+              <div className="organization-trunk" />
+              <div className="organization-departments">
+                {["技術部", "設計部", "業務部", "行銷部", "企劃部"].map((department) => {
+                  const departmentPeople = organizationPeople.filter((person) => person.department === department);
+                  return (
+                    <section className="organization-department" key={department}>
+                      <div className="organization-branch" />
+                      <header><h2>{department}</h2><span>{departmentPeople.length} 人</span></header>
+                      <div>
+                        {departmentPeople.map((person) => {
+                          const member = organizationMember(person);
+                          return <button type="button" className="organization-person" key={person.id} onClick={() => setSelectedOrgPerson(person)}><b>{member?.name ?? `${person.english} ${person.name}`}</b><span>{person.title}</span><small>查看</small></button>;
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </section>
+
+            {isAdmin && <section className="organization-admin">
+              <div className="section-title"><div><h2>人員與登入管理</h2><p>新增、編輯或停用可登入戰情室的公司成員。</p></div><span>{members.filter((member) => member.active).length} 位可登入</span></div>
+              <section className="people-layout">
               <form className="invite-card" onSubmit={addMember}>
                 <span className="invite-icon">＋</span>
                 <div><h2>新增可存取人員</h2><p>輸入姓名及已存在於正式系統的公司信箱，加入後即可登入戰情室。</p></div>
@@ -510,10 +566,26 @@ export default function Home() {
                 </div>
                 <div className="permission-note"><b>共享資料</b><span>名單與權限會同步儲存，其他使用者重新登入後即可看到最新設定。</span></div>
               </section>
-            </section>
+              </section>
+            </section>}
           </div>
         )}
       </section>
+      {selectedOrgPerson && (
+        <div className="organization-modal-backdrop" onMouseDown={() => setSelectedOrgPerson(null)}>
+          <section className="organization-modal" role="dialog" aria-modal="true" aria-label={`${selectedOrgPerson.english} 的聯絡資訊`} onMouseDown={(event) => event.stopPropagation()}>
+            <button className="organization-modal-close" type="button" aria-label="關閉" onClick={() => setSelectedOrgPerson(null)}>×</button>
+            <p className="kicker">{selectedOrgPerson.department}</p>
+            <h2>{organizationMember(selectedOrgPerson)?.name ?? `${selectedOrgPerson.english} ${selectedOrgPerson.name}`}</h2>
+            <p>{selectedOrgPerson.title}</p>
+            <dl>
+              <div><dt>公司信箱</dt><dd><a href={`mailto:${organizationMember(selectedOrgPerson)?.email ?? selectedOrgPerson.email}`}>{organizationMember(selectedOrgPerson)?.email ?? selectedOrgPerson.email}</a></dd></div>
+              <div><dt>聯絡手機</dt><dd><a href={`tel:${selectedOrgPerson.phone}`}>{selectedOrgPerson.phone}</a></dd></div>
+            </dl>
+            <button className="primary-button" type="button" onClick={() => setSelectedOrgPerson(null)}>關閉</button>
+          </section>
+        </div>
+      )}
       {toast && <div className="toast"><span>✓</span>{toast}</div>}
     </main>
   );

@@ -8,6 +8,13 @@ const seeds = [
   ["jerrychang@ai-zens.com", "Jerry 張廷", "管理員"],
   ["emilychang@ai-zens.com", "Emily 張芷瑄", "一般成員"],
   ["jameschien@ai-zens.com", "James 簡侑俊", "一般成員"],
+  ["pearlchen@ai-zens.com", "Pearl 陳品樺", "一般成員"],
+  ["blairpeng@ai-zens.com", "Blair 彭愛媛", "一般成員"],
+  ["seanchang@ai-zens.com", "Sean 張智翔", "一般成員"],
+  ["joannechen@ai-zens.com", "Joanne 陳靜宜", "一般成員"],
+  ["catchen@ai-zens.com", "Cat 陳瑾虹", "一般成員"],
+  ["garyshih@ai-zens.com", "Gary 石孟玄", "一般成員"],
+  ["sinyunpan@ai-zens.com", "Sharlene 潘欣芸", "一般成員"],
 ] as const;
 
 export async function ensureControlDb() {
