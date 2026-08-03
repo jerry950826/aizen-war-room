@@ -153,6 +153,22 @@ test("登入憑證保存一天並可在重新整理後恢復", async () => {
   assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
 });
 
+test("三個業務系統都使用伺服器端登入交接", async () => {
+  const [page, route] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/launch/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(page, /dashboard-login/);
+  assert.match(page, /window\.open\(`\/api\/launch\?service=\$\{service\.id\}`/);
+  assert.match(route, /service === "instructors"/);
+  assert.match(route, /DASHBOARD_SSO_SECRET/);
+  assert.match(route, /DASHBOARD_URL/);
+  assert.match(route, /userId,/);
+  assert.match(route, /SELECT leave,claims,instructors FROM permissions/);
+  assert.match(route, /你沒有此系統的存取權限/);
+});
+
 test("頁面權限名稱沿用允許登入名單資料", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 

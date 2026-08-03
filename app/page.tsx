@@ -360,23 +360,6 @@ export default function Home() {
   };
 
   const openService = (service: (typeof services)[number]) => {
-    if (service.id === "instructors") {
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "https://leaveflow-tw.jerry950826.chatgpt.site/api/dashboard-login";
-      form.target = "_blank";
-      for (const [name, value] of [["email", email], ["password", password]]) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = name;
-        input.value = value;
-        form.appendChild(input);
-      }
-      document.body.appendChild(form);
-      form.submit();
-      form.remove();
-      return;
-    }
     window.open(`/api/launch?service=${service.id}`, "_blank", "noopener,noreferrer");
   };
 
