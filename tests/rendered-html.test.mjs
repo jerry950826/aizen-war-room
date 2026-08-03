@@ -34,7 +34,9 @@ test("所有允許登入人員都有頁面權限且管理員可調整角色", as
   assert.match(page, /<option value="管理員">管理員<\/option>/);
   assert.match(page, /role: editMemberRole/);
   assert.match(route, /newRole !== "管理員" && newRole !== "一般成員"/);
-  assert.match(route, /不可變更自己的管理員角色/);
+  assert.doesNotMatch(page, /disabled=\{member\.email === email\}/);
+  assert.match(route, /系統至少需要保留一位可登入的管理員/);
+  assert.match(route, /role='管理員' AND active=1 AND email!=\?/);
 });
 
 test("公司組織圖包含請假系統全員且只讓管理員調整登入", async () => {

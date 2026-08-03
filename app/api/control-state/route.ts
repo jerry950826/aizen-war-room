@@ -50,8 +50,11 @@ export async function POST(request: Request) {
     if (newRole !== "管理員" && newRole !== "一般成員") {
       return Response.json({ error: "請選擇有效的系統角色" }, { status: 400 });
     }
-    if (email === auth.session.email && newRole !== member.role) {
-      return Response.json({ error: "不可變更自己的管理員角色" }, { status: 400 });
+    if (member.role === "管理員" && newRole === "一般成員") {
+      const otherAdmin = await auth.db.prepare(
+        "SELECT 1 AS found FROM members WHERE role='管理員' AND active=1 AND email!=? LIMIT 1",
+      ).bind(email).first();
+      if (!otherAdmin) return Response.json({ error: "系統至少需要保留一位可登入的管理員" }, { status: 400 });
     }
     if (newEmail !== email) {
       const existing = await auth.db.prepare("SELECT 1 AS found FROM members WHERE lower(email)=?")
@@ -64,6 +67,16 @@ export async function POST(request: Request) {
       auth.db.prepare("UPDATE sessions SET email=? WHERE email=?").bind(newEmail, email),
     ]);
   } else if (body.action === "toggle") {
+    if (!body.active) {
+      const member = await auth.db.prepare("SELECT role FROM members WHERE email=?")
+        .bind(email).first<{ role: string }>();
+      if (member?.role === "管理員") {
+        const otherAdmin = await auth.db.prepare(
+          "SELECT 1 AS found FROM members WHERE role='管理員' AND active=1 AND email!=? LIMIT 1",
+        ).bind(email).first();
+        if (!otherAdmin) return Response.json({ error: "系統至少需要保留一位可登入的管理員" }, { status: 400 });
+      }
+    }
     await auth.db.prepare("UPDATE members SET active=? WHERE email=?").bind(body.active ? 1 : 0, email).run();
   } else if (body.action === "remove") {
     await auth.db.batch([

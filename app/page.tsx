@@ -788,7 +788,6 @@ export default function Home() {
                           className="role-select"
                           aria-label={`${member.name} 系統角色`}
                           value={editMemberRole}
-                          disabled={member.email === email}
                           onChange={(event) => setEditMemberRole(event.target.value as Member["role"])}
                         >
                           <option value="一般成員">一般成員</option>
