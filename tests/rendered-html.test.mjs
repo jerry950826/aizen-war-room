@@ -16,11 +16,25 @@ test("人員名單提供姓名與公司信箱編輯介面", async () => {
 test("伺服器同步更新人員、權限與登入紀錄", async () => {
   const route = await readFile(new URL("../app/api/control-state/route.ts", import.meta.url), "utf8");
 
-  assert.match(route, /UPDATE members SET email=\?,name=\?/);
+  assert.match(route, /UPDATE members SET email=\?,name=\?,role=\?/);
   assert.match(route, /UPDATE permissions SET email=\?/);
   assert.match(route, /UPDATE sessions SET email=\?/);
   assert.match(route, /新信箱已被其他人使用/);
   assert.match(route, /requireSession\(request, true\)/);
+});
+
+test("所有允許登入人員都有頁面權限且管理員可調整角色", async () => {
+  const [page, route] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/control-state/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /setPermissions\(Object\.fromEntries\(memberList\.map/);
+  assert.match(page, /<option value="一般成員">一般成員<\/option>/);
+  assert.match(page, /<option value="管理員">管理員<\/option>/);
+  assert.match(page, /role: editMemberRole/);
+  assert.match(route, /newRole !== "管理員" && newRole !== "一般成員"/);
+  assert.match(route, /不可變更自己的管理員角色/);
 });
 
 test("公司組織圖包含請假系統全員且只讓管理員調整登入", async () => {

@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     action: "add" | "edit" | "toggle" | "remove" | "permissions";
     email: string;
     name?: string;
+    role?: "管理員" | "一般成員";
     newEmail?: string;
     active?: boolean;
     permissions?: { leave: boolean; claims: boolean; instructors: boolean };
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
     ]);
   } else if (body.action === "edit") {
     const newEmail = body.newEmail?.trim().toLowerCase() ?? "";
+    const newRole = body.role;
     if (!name) return Response.json({ error: "請輸入姓名" }, { status: 400 });
     if (!validEmail.test(newEmail)) {
       return Response.json({ error: "請使用有效的公司信箱" }, { status: 400 });
@@ -45,13 +47,19 @@ export async function POST(request: Request) {
     const member = await auth.db.prepare("SELECT role FROM members WHERE email=?")
       .bind(email).first<{ role: string }>();
     if (!member) return Response.json({ error: "找不到此人員" }, { status: 404 });
+    if (newRole !== "管理員" && newRole !== "一般成員") {
+      return Response.json({ error: "請選擇有效的系統角色" }, { status: 400 });
+    }
+    if (email === auth.session.email && newRole !== member.role) {
+      return Response.json({ error: "不可變更自己的管理員角色" }, { status: 400 });
+    }
     if (newEmail !== email) {
       const existing = await auth.db.prepare("SELECT 1 AS found FROM members WHERE lower(email)=?")
         .bind(newEmail).first();
       if (existing) return Response.json({ error: "新信箱已被其他人使用" }, { status: 409 });
     }
     await auth.db.batch([
-      auth.db.prepare("UPDATE members SET email=?,name=? WHERE email=?").bind(newEmail, name, email),
+      auth.db.prepare("UPDATE members SET email=?,name=?,role=? WHERE email=?").bind(newEmail, name, newRole, email),
       auth.db.prepare("UPDATE permissions SET email=? WHERE email=?").bind(newEmail, email),
       auth.db.prepare("UPDATE sessions SET email=? WHERE email=?").bind(newEmail, email),
     ]);

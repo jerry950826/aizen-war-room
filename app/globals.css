@@ -272,6 +272,8 @@ button { color: inherit; }
 .member-identity.editing input:focus { border-color: var(--purple); box-shadow: 0 0 0 2px rgba(0,115,223,.09); }
 .role-badge { justify-self: start; padding: 5px 8px; border-radius: 12px; background: #f1f3f5; color: #747c8a; font-size: 9px; font-weight: 800; }
 .role-badge.admin { background: #e8f4ff; color: var(--purple); }
+.role-select { min-width: 92px; height: 36px; padding: 0 9px; border: 1px solid #cfdde9; border-radius: 8px; background: white; color: #16243b; font: inherit; }
+.role-select:disabled { color: #7b8794; background: #f2f5f7; cursor: not-allowed; }
 .access-switch { justify-self: center; }
 .access-status { color: #969dab; font-size: 9px; font-weight: 800; }
 .access-status.enabled { color: #148064; }

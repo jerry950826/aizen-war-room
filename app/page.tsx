@@ -57,6 +57,15 @@ const initialPermissions: Record<string, Record<ServiceId, boolean>> = {
   maggie: { leave: true, claims: true, instructors: true },
   rita: { leave: true, claims: true, instructors: false },
   jerry: { leave: false, claims: true, instructors: true },
+  emily: { leave: true, claims: true, instructors: true },
+  james: { leave: true, claims: true, instructors: true },
+  pearlchen: { leave: true, claims: true, instructors: true },
+  blairpeng: { leave: true, claims: true, instructors: true },
+  seanchang: { leave: true, claims: true, instructors: true },
+  joannechen: { leave: true, claims: true, instructors: true },
+  catchen: { leave: true, claims: true, instructors: true },
+  garyshih: { leave: true, claims: true, instructors: true },
+  sinyunpan: { leave: true, claims: true, instructors: true },
 };
 
 const adminEmails: Record<string, string> = {
@@ -219,6 +228,7 @@ export default function Home() {
   const [editingEmail, setEditingEmail] = useState("");
   const [editMemberName, setEditMemberName] = useState("");
   const [editMemberEmail, setEditMemberEmail] = useState("");
+  const [editMemberRole, setEditMemberRole] = useState<Member["role"]>("一般成員");
   const [selectedOrgPerson, setSelectedOrgPerson] = useState<OrgPerson | null>(null);
   const [saved, setSaved] = useState("");
   const [toast, setToast] = useState("");
@@ -305,11 +315,17 @@ export default function Home() {
       members: Array<Member & { active: number | boolean }>;
       permissions: Array<{ email: string; leave: number | boolean; claims: number | boolean; instructors: number | boolean }>;
     };
-    setMembers(data.members.map((member) => ({ ...member, active: Boolean(member.active) })));
-    setPermissions(Object.fromEntries(data.permissions.map((item) => [
-      adminEmails[item.email] ?? item.email.split("@")[0],
-      { leave: Boolean(item.leave), claims: Boolean(item.claims), instructors: Boolean(item.instructors) },
-    ])));
+    const memberList = data.members.map((member) => ({ ...member, active: Boolean(member.active) }));
+    const permissionsByEmail = new Map(data.permissions.map((item) => [item.email, item]));
+    setMembers(memberList);
+    setPermissions(Object.fromEntries(memberList.map((member) => {
+      const item = permissionsByEmail.get(member.email);
+      return [adminEmails[member.email] ?? member.email.split("@")[0], {
+        leave: item ? Boolean(item.leave) : true,
+        claims: item ? Boolean(item.claims) : true,
+        instructors: item ? Boolean(item.instructors) : true,
+      }];
+    })));
   };
 
   const login = async (event: FormEvent<HTMLFormElement>) => {
@@ -389,6 +405,7 @@ export default function Home() {
     setEditingEmail(member.email);
     setEditMemberName(member.name);
     setEditMemberEmail(member.email);
+    setEditMemberRole(member.role);
   };
 
   const saveMember = async (member: Member) => {
@@ -403,6 +420,7 @@ export default function Home() {
         email: member.email,
         newEmail: normalizedEmail,
         name: normalizedName,
+        role: editMemberRole,
       }),
     });
     const result = await response.json().catch(() => null) as { error?: string } | null;
@@ -689,7 +707,7 @@ export default function Home() {
                   );
                 })}
               </div>
-              <div className="permission-note"><b>提示</b><span>權限關閉後，該業務卡片會立即從使用者的戰情室隱藏。這是測試版，重新整理頁面後會還原預設設定。</span></div>
+              <div className="permission-note"><b>提示</b><span>權限關閉後，該業務卡片會從使用者的戰情室隱藏；儲存後會同步套用到其他人的登入畫面。</span></div>
             </section>
           </div>
         )}
@@ -757,7 +775,20 @@ export default function Home() {
                       ) : (
                         <span className="member-identity"><b>{member.name}</b><small>{member.email}</small></span>
                       )}
-                      <span className={`role-badge ${member.role === "管理員" ? "admin" : ""}`}>{member.role}</span>
+                      {editingEmail === member.email ? (
+                        <select
+                          className="role-select"
+                          aria-label={`${member.name} 系統角色`}
+                          value={editMemberRole}
+                          disabled={member.email === email}
+                          onChange={(event) => setEditMemberRole(event.target.value as Member["role"])}
+                        >
+                          <option value="一般成員">一般成員</option>
+                          <option value="管理員">管理員</option>
+                        </select>
+                      ) : (
+                        <span className={`role-badge ${member.role === "管理員" ? "admin" : ""}`}>{member.role}</span>
+                      )}
                       <label className="switch access-switch" aria-label={`${member.email} 登入權限`}>
                           <input type="checkbox" checked={member.active} onChange={async () => {
                             await fetch("/api/control-state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: "toggle", email: member.email, active: !member.active }) });
