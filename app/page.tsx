@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type View = "dashboard" | "fortune" | "password" | "permissions" | "people";
 type ServiceId = "leave" | "claims" | "instructors";
@@ -94,7 +94,7 @@ const organizationPeople: OrgPerson[] = [
   { id: "maggie", department: "總經理室", level: 1, title: "總經理", english: "Maggie", name: "房美華", phone: "0937-138902", email: "maggiefang@ai-zens.com", birthday: "12-01" },
   { id: "emily", department: "技術部", level: 2, title: "前端工程師", english: "Emily", name: "張芷瑄", phone: "0970-672188", email: "emilychang@ai-zens.com", birthday: "06-10" },
   { id: "jerry", department: "技術部", level: 2, title: "前端工程師", english: "Jerry", name: "張廷", phone: "0975-750220", email: "jerrychang@ai-zens.com", birthday: "08-26" },
-  { id: "james", department: "技術部", level: 2, title: "後端工程師", english: "James", name: "簡侑俊", phone: "0968-813952", email: "jameschien@ai-zens.com", birthday: null },
+  { id: "james", department: "技術部", level: 2, title: "後端工程師", english: "James", name: "簡侑俊", phone: "0968-813952", email: "jameschien@ai-zens.com", birthday: "01-22" },
   { id: "pearl", department: "設計部", level: 2, title: "產品設計師", english: "Pearl", name: "陳品樺", phone: "0979-635252", email: "pearlchen@ai-zens.com", birthday: "08-01" },
   { id: "blair", department: "設計部", level: 2, title: "數位設計師", english: "Blair", name: "彭愛媛", phone: "0988-506226", email: "blairpeng@ai-zens.com", birthday: "07-12" },
   { id: "sean", department: "業務部", level: 2, title: "資深業務經理", english: "Sean", name: "張智翔", phone: "0985-699592", email: "seanchang@ai-zens.com", birthday: null },
@@ -416,6 +416,40 @@ export default function Home() {
   const organizationMember = (person: OrgPerson) =>
     members.find((member) => member.email === person.email || member.name.startsWith(`${person.english} `));
 
+  const permissionMember = (permissionKey: string) => {
+    const permissionEmail = Object.entries(adminEmails).find(([, key]) => key === permissionKey)?.[0]
+      ?? `${permissionKey}@ai-zens.com`;
+    return members.find((member) => member.email === permissionEmail);
+  };
+
+  const logout = async () => {
+    await fetch("/api/war-room-session", { method: "DELETE" }).catch(() => null);
+    setLoggedIn(false);
+    setToken("");
+    setPassword("");
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const restoreSession = async () => {
+      try {
+        const response = await fetch("/api/war-room-session", { cache: "no-store" });
+        if (!response.ok || cancelled) return;
+        const data = await response.json() as { email: string; name: string; role: Member["role"] };
+        const normalizedEmail = data.email.toLowerCase();
+        setEmail(normalizedEmail);
+        setLoggedInRole(data.role);
+        setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
+        await loadSharedState("");
+        if (!cancelled) setLoggedIn(true);
+      } catch {
+        // 沒有有效的一日登入憑證時，維持顯示登入頁。
+      }
+    };
+    void restoreSession();
+    return () => { cancelled = true; };
+  }, []);
+
   if (!loggedIn) {
     return (
       <main className="login-page">
@@ -492,7 +526,7 @@ export default function Home() {
             <div className="avatar">{profile.name[0]}</div>
             <div><b>{profile.name}</b><span>{profile.title}</span></div>
           </div>
-          <button className="logout" onClick={() => setLoggedIn(false)} aria-label="登出">↪</button>
+          <button className="logout" onClick={() => void logout()} aria-label="登出">↪</button>
         </div>
       </aside>
 
@@ -639,9 +673,11 @@ export default function Home() {
                 <div className="permission-row table-labels"><span>管理者</span>{services.map(s => <span key={s.id}>{s.title}</span>)}<span>權限數</span></div>
                 {Object.keys(permissions).map((name) => {
                   const count = Object.values(permissions[name]).filter(Boolean).length;
+                  const member = permissionMember(name);
+                  const displayName = member?.name ?? name[0].toUpperCase() + name.slice(1);
                   return (
                     <div className="permission-row" key={name}>
-                      <span className="admin-name"><i>{name[0].toUpperCase()}</i><b>{name[0].toUpperCase() + name.slice(1)}</b><small>系統管理員</small></span>
+                      <span className="admin-name"><i>{displayName[0].toUpperCase()}</i><b>{displayName}</b><small>{member?.role ?? "系統管理員"}</small></span>
                       {services.map((service) => (
                         <label className="switch" key={service.id}>
                           <input type="checkbox" checked={permissions[name][service.id]} onChange={() => setPermissions(prev => ({ ...prev, [name]: { ...prev[name], [service.id]: !prev[name][service.id] } }))} />

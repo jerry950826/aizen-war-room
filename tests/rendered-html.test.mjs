@@ -70,7 +70,7 @@ test("組織聯絡資訊顯示生日且未提供者標示收集中", async () =>
 
   assert.match(page, /email: "emilychang@ai-zens\.com", birthday: "06-10"/);
   assert.match(page, /email: "garyshih@ai-zens\.com", birthday: "07-23"/);
-  assert.match(page, /email: "jameschien@ai-zens\.com", birthday: null/);
+  assert.match(page, /email: "jameschien@ai-zens\.com", birthday: "01-22"/);
   assert.match(page, /<dt>生日<\/dt>/);
   assert.match(page, /if \(!birthday\) return "收集中"/);
   assert.match(page, /signedInOrgPerson\?\.birthday \?\? email/);
@@ -124,6 +124,27 @@ test("登入頁不預填特定帳號或密碼", async () => {
   assert.match(page, /const \[rememberAccount, setRememberAccount\] = useState\(false\)/);
   assert.match(page, /checked=\{rememberAccount\}/);
   assert.doesNotMatch(page, /defaultChecked \/> 記住我的帳號/);
+});
+
+test("登入憑證保存一天並可在重新整理後恢復", async () => {
+  const [loginRoute, sessionRoute, page] = await Promise.all([
+    readFile(new URL("../app/api/war-room-login/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/war-room-session/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(loginRoute, /Max-Age=86400/);
+  assert.match(loginRoute, /24 \* 60 \* 60 \* 1000/);
+  assert.match(sessionRoute, /requireSession\(request\)/);
+  assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
+});
+
+test("頁面權限名稱沿用允許登入名單資料", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(page, /const member = permissionMember\(name\)/);
+  assert.match(page, /const displayName = member\?\.name/);
+  assert.match(page, /<b>\{displayName\}<\/b>/);
 });
 
 test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {
