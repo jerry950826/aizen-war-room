@@ -350,8 +350,9 @@ export default function Home() {
       setLoggedInRole(data.role);
       setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
       await loadSharedState(data.token);
-      if (new URLSearchParams(window.location.search).get("returnTo") === "instructors") {
-        window.location.assign("/api/launch?service=instructors");
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+      if (returnTo === "leave" || returnTo === "claims" || returnTo === "instructors") {
+        window.location.assign(`/api/launch?service=${returnTo}`);
         return;
       }
       setLoggedIn(true);

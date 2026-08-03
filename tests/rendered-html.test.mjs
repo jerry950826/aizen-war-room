@@ -170,7 +170,8 @@ test("三個業務系統都使用伺服器端登入交接", async () => {
   assert.match(route, /SELECT leave,claims,instructors FROM permissions/);
   assert.match(route, /你沒有此系統的存取權限/);
   assert.match(route, /loginUrl\.searchParams\.set\("returnTo"/);
-  assert.match(page, /window\.location\.assign\("\/api\/launch\?service=instructors"\)/);
+  assert.match(page, /returnTo === "leave" \|\| returnTo === "claims" \|\| returnTo === "instructors"/);
+  assert.match(page, /window\.location\.assign\(`\/api\/launch\?service=\$\{returnTo\}`\)/);
 });
 
 test("頁面權限名稱沿用允許登入名單資料", async () => {
