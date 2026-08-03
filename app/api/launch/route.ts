@@ -20,7 +20,11 @@ const dashboardUserIds: Record<string, string> = {
 
 export async function GET(request: Request) {
   const auth = await requireSession(request);
-  if (!auth) return Response.redirect(new URL("/", request.url), 303);
+  if (!auth) {
+    const loginUrl = new URL("/", request.url);
+    loginUrl.searchParams.set("returnTo", new URL(request.url).searchParams.get("service") || "dashboard");
+    return Response.redirect(loginUrl, 303);
+  }
 
   const service = new URL(request.url).searchParams.get("service");
   if (service !== "leave" && service !== "claims" && service !== "instructors") {

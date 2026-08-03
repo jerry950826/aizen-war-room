@@ -350,6 +350,10 @@ export default function Home() {
       setLoggedInRole(data.role);
       setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
       await loadSharedState(data.token);
+      if (new URLSearchParams(window.location.search).get("returnTo") === "instructors") {
+        window.location.assign("/api/launch?service=instructors");
+        return;
+      }
       setLoggedIn(true);
       setView("dashboard");
       notify(`歡迎回來，${data.name}`);
