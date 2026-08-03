@@ -231,6 +231,7 @@ export default function Home() {
   const [editMemberRole, setEditMemberRole] = useState<Member["role"]>("一般成員");
   const [selectedOrgPerson, setSelectedOrgPerson] = useState<OrgPerson | null>(null);
   const [saved, setSaved] = useState("");
+  const [permissionBusy, setPermissionBusy] = useState(false);
   const [toast, setToast] = useState("");
   const visibleServices = useMemo(
     () => services.filter((service) => permissions[user]?.[service.id] ?? true),
@@ -421,6 +422,33 @@ export default function Home() {
     const permissionEmail = Object.entries(adminEmails).find(([, key]) => key === permissionKey)?.[0]
       ?? `${permissionKey}@ai-zens.com`;
     return members.find((member) => member.email === permissionEmail);
+  };
+
+  const savePermissions = async () => {
+    setPermissionBusy(true);
+    try {
+      const responses = await Promise.all(Object.entries(permissions).map(([name, access]) => {
+        const member = permissionMember(name);
+        if (!member) throw new Error(`找不到 ${name} 的登入名單資料`);
+        return fetch("/api/control-state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: "permissions", email: member.email, permissions: access }),
+        });
+      }));
+      const failed = responses.find((response) => !response.ok);
+      if (failed) {
+        const result = await failed.json().catch(() => null) as { error?: string } | null;
+        throw new Error(result?.error || "部分權限未能儲存");
+      }
+      await loadSharedState(token);
+      setSaved(new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }));
+      notify("共享權限設定已儲存");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "權限儲存失敗，請再試一次");
+    } finally {
+      setPermissionBusy(false);
+    }
   };
 
   const logout = async () => {
@@ -657,14 +685,7 @@ export default function Home() {
 
         {view === "permissions" && (
           <div className="page">
-            <div className="page-heading"><div><p className="kicker">ACCESS CONTROL</p><h1>頁面權限管控</h1><p>設定管理者可進入的業務系統。</p></div><button className="primary-button save-button" onClick={async () => {
-              await Promise.all(Object.entries(permissions).map(([name, access]) => {
-                const adminEmail = Object.entries(adminEmails).find(([, value]) => value === name)?.[0] ?? name;
-                return fetch("/api/control-state", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: "permissions", email: adminEmail, permissions: access }) });
-              }));
-              setSaved(new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }));
-              notify("共享權限設定已儲存");
-            }}>儲存變更</button></div>
+            <div className="page-heading"><div><p className="kicker">ACCESS CONTROL</p><h1>頁面權限管控</h1><p>設定管理者可進入的業務系統。</p></div><button className="primary-button save-button" disabled={permissionBusy} onClick={() => void savePermissions()}>{permissionBusy ? "儲存中…" : "儲存變更"}</button></div>
             <section className="permission-card">
               <div className="permission-head">
                 <div><h2>管理者頁面存取權</h2><p>勾選代表該帳號登入後可以看到並進入此系統。</p></div>

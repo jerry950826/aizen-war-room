@@ -175,6 +175,9 @@ test("頁面權限名稱沿用允許登入名單資料", async () => {
   assert.match(page, /const member = permissionMember\(name\)/);
   assert.match(page, /const displayName = member\?\.name/);
   assert.match(page, /<b>\{displayName\}<\/b>/);
+  assert.match(page, /email: member\.email/);
+  assert.match(page, /responses\.find\(\(response\) => !response\.ok\)/);
+  assert.match(page, /await loadSharedState\(token\)/);
 });
 
 test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {
