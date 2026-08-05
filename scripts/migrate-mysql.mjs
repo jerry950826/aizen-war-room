@@ -11,7 +11,8 @@ const connection = await mysql.createConnection({
   password: process.env.MYSQL_PASSWORD,
   ssl: sslEnabled ? {} : undefined,
   multipleStatements: true,
-  charset: "utf8mb4",
+  charset: "UTF8MB4_UNICODE_CI",
+  disableEval: true,
 });
 
 try {
@@ -23,7 +24,12 @@ try {
       (SELECT COUNT(*) FROM systems) AS systems,
       (SELECT COUNT(*) FROM member_system_permissions) AS permissions
   `);
-  console.log(JSON.stringify({ ok: true, ...counts }));
+  const [[comments]] = await connection.query(`
+    SELECT COUNT(*) AS commented_tables
+      FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_COMMENT <> ''
+  `);
+  console.log(JSON.stringify({ ok: true, ...counts, commentedTables: comments.commented_tables }));
 } finally {
   await connection.end();
 }

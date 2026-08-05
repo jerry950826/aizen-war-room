@@ -1,48 +1,49 @@
 import { env } from "cloudflare:workers";
+import mysql, { type Connection } from "mysql2/promise";
 
-const DEFAULT_HASH = "f4e98344541784f2eabcf6fcd1daf050afd9a1bfa2c59819356fe0543752f311";
+type RuntimeEnv = {
+  MYSQL_HOST?: string;
+  MYSQL_PORT?: string;
+  MYSQL_DATABASE?: string;
+  MYSQL_USER?: string;
+  MYSQL_PASSWORD?: string;
+  MYSQL_SSL?: string;
+};
 
-const seeds = [
-  ["maggiefang@ai-zens.com", "Maggie 房美華", "管理員"],
-  ["ritahsieh@ai-zens.com", "Rita 謝雨如", "管理員"],
-  ["jerrychang@ai-zens.com", "Jerry 張廷", "管理員"],
-  ["emilychang@ai-zens.com", "Emily 張芷瑄", "一般成員"],
-  ["jameschien@ai-zens.com", "James 簡侑俊", "一般成員"],
-  ["pearlchen@ai-zens.com", "Pearl 陳品樺", "一般成員"],
-  ["blairpeng@ai-zens.com", "Blair 彭愛媛", "一般成員"],
-  ["seanchang@ai-zens.com", "Sean 張智翔", "一般成員"],
-  ["joannechen@ai-zens.com", "Joanne 陳靜宜", "一般成員"],
-  ["catchen@ai-zens.com", "Cat 陳瑾虹", "一般成員"],
-  ["garyshih@ai-zens.com", "Gary 石孟玄", "一般成員"],
-  ["sinyunpan@ai-zens.com", "Sharlene 潘欣芸", "一般成員"],
-] as const;
-
-const nameCorrections = [
-  ["pearlchen@ai-zens.com", "Pearlchen", "Pearl 陳品樺"],
-  ["garyshih@ai-zens.com", "Garyshih", "Gary 石孟玄"],
-  ["sinyunpan@ai-zens.com", "Sinyunpan", "Sharlene 潘欣芸"],
-] as const;
-
-export async function ensureControlDb() {
-  const db = env.DB;
-  const statements = [
-    db.prepare("CREATE TABLE IF NOT EXISTS members (email TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, password_hash TEXT NOT NULL)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS permissions (email TEXT PRIMARY KEY, leave INTEGER NOT NULL DEFAULT 1, claims INTEGER NOT NULL DEFAULT 1, instructors INTEGER NOT NULL DEFAULT 1)"),
-    db.prepare("CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, email TEXT NOT NULL, expires_at INTEGER NOT NULL)"),
-  ];
-  for (const [email, name, role] of seeds) {
-    statements.push(
-      db.prepare("INSERT OR IGNORE INTO members (email,name,role,active,password_hash) VALUES (?,?,?,?,?)").bind(email, name, role, 1, DEFAULT_HASH),
-      db.prepare("INSERT OR IGNORE INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?)").bind(email, 1, 1, 1),
-    );
+function mysqlConfig() {
+  const runtime = env as unknown as RuntimeEnv;
+  const required = ["MYSQL_HOST", "MYSQL_DATABASE", "MYSQL_USER", "MYSQL_PASSWORD"] as const;
+  for (const key of required) {
+    if (!runtime[key]) throw new Error(`Missing MySQL setting: ${key}`);
   }
-  for (const [email, oldName, correctedName] of nameCorrections) {
-    statements.push(
-      db.prepare("UPDATE members SET name=? WHERE email=? AND name=?").bind(correctedName, email, oldName),
-    );
+  return {
+    host: runtime.MYSQL_HOST,
+    port: Number(runtime.MYSQL_PORT || 3306),
+    database: runtime.MYSQL_DATABASE,
+    user: runtime.MYSQL_USER,
+    password: runtime.MYSQL_PASSWORD,
+    ssl: /^(true|required|1)$/i.test(runtime.MYSQL_SSL || "") ? {} : undefined,
+    charset: "UTF8MB4_UNICODE_CI",
+    connectTimeout: 10_000,
+    disableEval: true,
+  };
+}
+
+export async function openControlDb() {
+  return mysql.createConnection(mysqlConfig());
+}
+
+export function decodeDbText(value: string) {
+  if (!/[\u0080-\u00ff]/.test(value)) return value;
+  return new TextDecoder().decode(Uint8Array.from(value, (character) => character.charCodeAt(0)));
+}
+
+export function decodeHexText(value: string) {
+  const bytes = new Uint8Array(value.length / 2);
+  for (let index = 0; index < value.length; index += 2) {
+    bytes[index / 2] = Number.parseInt(value.slice(index, index + 2), 16);
   }
-  await db.batch(statements);
-  return db;
+  return new TextDecoder().decode(bytes);
 }
 
 export async function sha256(value: string) {
@@ -67,14 +68,42 @@ export async function signHandoff(value: string, secret: string) {
   return base64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))));
 }
 
-export async function requireSession(request: Request, admin = false) {
-  const db = await ensureControlDb();
+export function sessionToken(request: Request) {
   const bearer = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   const cookie = request.headers.get("Cookie")?.match(/(?:^|;\s*)war_room_session=([^;]+)/)?.[1] ?? "";
-  const token = bearer || cookie;
-  const session = await db.prepare(
-    "SELECT s.email,m.role,m.active FROM sessions s JOIN members m ON m.email=s.email WHERE s.token=? AND s.expires_at>?",
-  ).bind(token, Date.now()).first<{ email: string; role: string; active: number }>();
-  if (!session || !session.active || (admin && session.role !== "管理員")) return null;
-  return { db, session };
+  return bearer || cookie;
+}
+
+export async function requireSession(request: Request, admin = false) {
+  const db = await openControlDb();
+  const token = sessionToken(request);
+  const [rows] = await db.execute<mysql.RowDataPacket[]>(
+    `SELECT s.member_id, m.email, HEX(m.role) AS role_hex, m.active
+       FROM sessions s
+       JOIN members m ON m.id = s.member_id
+      WHERE s.token = ? AND s.expires_at > ?
+      LIMIT 1`,
+    [token, Date.now()],
+  );
+  const row = rows[0] as { member_id: string; email: string; role_hex: string; active: number } | undefined;
+  const session = row ? { ...row, role: decodeHexText(row.role_hex) } : undefined;
+  if (!session || !session.active || (admin && session.role !== "管理員")) {
+    await db.end();
+    return null;
+  }
+  return { db, session, token };
+}
+
+export async function audit(
+  db: Connection,
+  actorMemberId: string,
+  action: string,
+  targetType: string,
+  targetId: string | null,
+  details?: unknown,
+) {
+  await db.execute(
+    "INSERT INTO audit_logs (actor_member_id,action,target_type,target_id,details_json) VALUES (?,?,?,?,?)",
+    [actorMemberId, action, targetType, targetId, details === undefined ? null : JSON.stringify(details)],
+  );
 }

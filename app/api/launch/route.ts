@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import mysql from "mysql2/promise";
 import { base64Url, requireSession, signHandoff } from "../../../lib/control-db";
 
 const ADMIN_URL = "https://leaveflow-tw.jerry950826.chatgpt.site";
@@ -28,28 +29,35 @@ export async function GET(request: Request) {
 
   const service = new URL(request.url).searchParams.get("service");
   if (service !== "leave" && service !== "claims" && service !== "instructors") {
+    await auth.db.end();
     return Response.json({ error: "不支援的系統" }, { status: 400 });
   }
-  const access = await auth.db.prepare(
-    "SELECT leave,claims,instructors FROM permissions WHERE email=?",
-  ).bind(auth.session.email).first<{ leave: number; claims: number; instructors: number }>();
-  if (!access?.[service]) return Response.json({ error: "你沒有此系統的存取權限" }, { status: 403 });
+  const [permissionRows] = await auth.db.execute<mysql.RowDataPacket[]>(
+    "SELECT can_access FROM member_system_permissions WHERE member_id=? AND system_id=? LIMIT 1",
+    [auth.session.member_id, service],
+  );
+  const access = permissionRows[0] as { can_access: number } | undefined;
+  if (!access?.can_access) {
+    await auth.db.end();
+    return Response.json({ error: "你沒有此系統的存取權限" }, { status: 403 });
+  }
   if (service === "instructors") {
     const secret = (env as unknown as { DASHBOARD_SSO_SECRET?: string }).DASHBOARD_SSO_SECRET || "";
     const userId = dashboardUserIds[auth.session.email.toLowerCase()];
-    if (!secret) return Response.json({ error: "講師看板登入交接尚未完成設定" }, { status: 503 });
-    if (!userId) return Response.json({ error: "此帳號尚未開通講師看板" }, { status: 403 });
+    if (!secret) { await auth.db.end(); return Response.json({ error: "講師看板登入交接尚未完成設定" }, { status: 503 }); }
+    if (!userId) { await auth.db.end(); return Response.json({ error: "此帳號尚未開通講師看板" }, { status: 403 }); }
     const payload = base64Url(new TextEncoder().encode(JSON.stringify({
       userId,
       exp: Date.now() + 60 * 1000,
     })));
     const signature = await signHandoff(payload, secret);
+    await auth.db.end();
     return Response.redirect(`${DASHBOARD_URL}/#auth=${payload}.${signature}`, 303);
   }
   const path = service === "claims" ? "/claims" : service === "leave" ? "/leave" : "";
 
   const secret = (env as unknown as { WAR_ROOM_SSO_SECRET?: string }).WAR_ROOM_SSO_SECRET || "";
-  if (!secret) return Response.json({ error: "登入交接尚未完成設定" }, { status: 503 });
+  if (!secret) { await auth.db.end(); return Response.json({ error: "登入交接尚未完成設定" }, { status: 503 }); }
 
   const payload = base64Url(new TextEncoder().encode(JSON.stringify({
     email: auth.session.email,
@@ -57,5 +65,6 @@ export async function GET(request: Request) {
     exp: Date.now() + 60 * 1000,
   })));
   const signature = await signHandoff(payload, secret);
+  await auth.db.end();
   return Response.redirect(`${ADMIN_URL}/api/war-room-sso?auth=${payload}.${signature}`, 303);
 }

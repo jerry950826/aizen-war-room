@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS departments (
   sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公司部門主檔，提供組織圖與成員所屬部門使用';
 
 CREATE TABLE IF NOT EXISTS members (
   id VARCHAR(32) PRIMARY KEY,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS members (
   CONSTRAINT fk_members_department FOREIGN KEY (department_id) REFERENCES departments(id),
   INDEX idx_members_department (department_id),
   INDEX idx_members_active_role (active, role)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='戰情室成員主檔，保存登入帳號、角色、聯絡方式、職稱與生日';
 
 CREATE TABLE IF NOT EXISTS systems (
   id VARCHAR(32) PRIMARY KEY,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS systems (
   sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='戰情室可開啟的業務系統主檔，例如請假、請款與講師看板';
 
 CREATE TABLE IF NOT EXISTS member_system_permissions (
   member_id VARCHAR(32) NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS member_system_permissions (
   CONSTRAINT fk_permission_system FOREIGN KEY (system_id) REFERENCES systems(id) ON DELETE CASCADE,
   CONSTRAINT fk_permission_updated_by FOREIGN KEY (updated_by) REFERENCES members(id) ON DELETE SET NULL,
   INDEX idx_permission_system (system_id, can_access)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='成員與業務系統的存取權限對照表，由管理員維護';
 
 CREATE TABLE IF NOT EXISTS sessions (
   token CHAR(36) PRIMARY KEY,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   CONSTRAINT fk_session_member FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
   INDEX idx_sessions_member (member_id),
   INDEX idx_sessions_expiry (expires_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登入工作階段，保存一天效期的登入憑證與最後使用時間';
 
 CREATE TABLE IF NOT EXISTS audit_logs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -76,7 +76,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   CONSTRAINT fk_audit_actor FOREIGN KEY (actor_member_id) REFERENCES members(id) ON DELETE SET NULL,
   INDEX idx_audit_created_at (created_at),
   INDEX idx_audit_target (target_type, target_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理操作稽核紀錄，追蹤誰在何時修改人員、角色與權限';
+
+ALTER TABLE departments COMMENT = '公司部門主檔，提供組織圖與成員所屬部門使用';
+ALTER TABLE members COMMENT = '戰情室成員主檔，保存登入帳號、角色、聯絡方式、職稱與生日';
+ALTER TABLE systems COMMENT = '戰情室可開啟的業務系統主檔，例如請假、請款與講師看板';
+ALTER TABLE member_system_permissions COMMENT = '成員與業務系統的存取權限對照表，由管理員維護';
+ALTER TABLE sessions COMMENT = '登入工作階段，保存一天效期的登入憑證與最後使用時間';
+ALTER TABLE audit_logs COMMENT = '管理操作稽核紀錄，追蹤誰在何時修改人員、角色與權限';
 
 INSERT INTO departments (id, name, sort_order) VALUES
   ('executive', '總經理室', 10),

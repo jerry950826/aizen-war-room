@@ -16,9 +16,9 @@ test("人員名單提供姓名與公司信箱編輯介面", async () => {
 test("伺服器同步更新人員、權限與登入紀錄", async () => {
   const route = await readFile(new URL("../app/api/control-state/route.ts", import.meta.url), "utf8");
 
-  assert.match(route, /UPDATE members SET email=\?,name=\?,role=\?/);
-  assert.match(route, /UPDATE permissions SET email=\?/);
-  assert.match(route, /UPDATE sessions SET email=\?/);
+  assert.match(route, /UPDATE members SET email=\?,display_name=\?,role=\? WHERE id=\?/);
+  assert.match(route, /member_system_permissions/);
+  assert.match(route, /permission\.update/);
   assert.match(route, /新信箱已被其他人使用/);
   assert.match(route, /requireSession\(request, true\)/);
 });
@@ -36,13 +36,13 @@ test("所有允許登入人員都有頁面權限且管理員可調整角色", as
   assert.match(route, /newRole !== "管理員" && newRole !== "一般成員"/);
   assert.doesNotMatch(page, /disabled=\{member\.email === email\}/);
   assert.match(route, /系統至少需要保留一位可登入的管理員/);
-  assert.match(route, /role='管理員' AND active=1 AND email!=\?/);
+  assert.match(route, /role='管理員' AND active=1 AND id!=\?/);
 });
 
 test("公司組織圖包含請假系統全員且只讓管理員調整登入", async () => {
   const [page, database] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../lib/control-db.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/mysql/001-war-room.sql", import.meta.url), "utf8"),
   ]);
 
   for (const name of ["Maggie", "Emily", "Jerry", "James", "Pearl", "Blair", "Sean", "Joanne", "Cat", "Gary", "Sharlene", "Rita"]) {
@@ -53,13 +53,13 @@ test("公司組織圖包含請假系統全員且只讓管理員調整登入", as
   assert.match(database, /sinyunpan@ai-zens\.com/);
 });
 
-test("修正既有 Pearl、Gary 與 Sharlene 顯示名稱", async () => {
-  const database = await readFile(new URL("../lib/control-db.ts", import.meta.url), "utf8");
+test("MySQL 種子資料使用正確的 Pearl、Gary 與 Sharlene 顯示名稱", async () => {
+  const database = await readFile(new URL("../db/mysql/001-war-room.sql", import.meta.url), "utf8");
 
-  assert.match(database, /\["pearlchen@ai-zens\.com", "Pearlchen", "Pearl 陳品樺"\]/);
-  assert.match(database, /\["garyshih@ai-zens\.com", "Garyshih", "Gary 石孟玄"\]/);
-  assert.match(database, /\["sinyunpan@ai-zens\.com", "Sinyunpan", "Sharlene 潘欣芸"\]/);
-  assert.match(database, /UPDATE members SET name=\? WHERE email=\? AND name=\?/);
+  assert.match(database, /'pearlchen@ai-zens\.com', 'Pearl 陳品樺'/);
+  assert.match(database, /'garyshih@ai-zens\.com', 'Gary 石孟玄'/);
+  assert.match(database, /'sinyunpan@ai-zens\.com', 'Sharlene 潘欣芸'/);
+  assert.match(database, /ON DUPLICATE KEY UPDATE display_name = VALUES\(display_name\)/);
 });
 
 test("今日運勢依帳號與日期固定並提供注意事項", async () => {
@@ -167,7 +167,7 @@ test("三個業務系統都使用伺服器端登入交接", async () => {
   assert.match(route, /DASHBOARD_SSO_SECRET/);
   assert.match(route, /DASHBOARD_URL/);
   assert.match(route, /userId,/);
-  assert.match(route, /SELECT leave,claims,instructors FROM permissions/);
+  assert.match(route, /SELECT can_access FROM member_system_permissions/);
   assert.match(route, /你沒有此系統的存取權限/);
   assert.match(route, /loginUrl\.searchParams\.set\("returnTo"/);
   assert.match(page, /returnTo === "leave" \|\| returnTo === "claims" \|\| returnTo === "instructors"/);
@@ -195,4 +195,12 @@ test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {
   assert.match(styles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) minmax\(0, 1\.35fr\)/);
   assert.match(styles, /\.fortune-metrics article \{ min-height: 132px; display: grid/);
   assert.match(styles, /\.fortune-page \.page-heading \{ align-items: flex-start; flex-direction: column/);
+});
+
+test("MySQL 每個戰情室資料表都有中文用途備註", async () => {
+  const schema = await readFile(new URL("../db/mysql/001-war-room.sql", import.meta.url), "utf8");
+
+  for (const table of ["departments", "members", "systems", "member_system_permissions", "sessions", "audit_logs"]) {
+    assert.match(schema, new RegExp(`ALTER TABLE ${table} COMMENT = '[^']+'`));
+  }
 });
