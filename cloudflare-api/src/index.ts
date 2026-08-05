@@ -15,7 +15,7 @@ async function sha256(value: string) {
 }
 
 function sessionToken(request: Request) {
-  const bearer = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const bearer = request.headers.get("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1] ?? "";
   const cookie = request.headers.get("Cookie")?.match(/(?:^|;\s*)war_room_session=([^;]+)/)?.[1] ?? "";
   return bearer || cookie;
 }

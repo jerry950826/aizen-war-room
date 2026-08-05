@@ -155,6 +155,18 @@ test("登入憑證保存一天並可在重新整理後恢復", async () => {
   assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
 });
 
+test("重新整理後忽略空白 Bearer 並沿用一日登入 Cookie", async () => {
+  const [proxy, api, page] = await Promise.all([
+    readFile(new URL("../lib/control-api.ts", import.meta.url), "utf8"),
+    readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(proxy, /\^Bearer\\s\+\\S\+\/i/);
+  assert.match(api, /match\(\/\^Bearer\\s\+\(\\S\+\)\$\/i\)/);
+  assert.match(page, /jerry: \{ leave: true, claims: true, instructors: true \}/);
+});
+
 test("三個業務系統都使用伺服器端登入交接", async () => {
   const [page, route, api] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),

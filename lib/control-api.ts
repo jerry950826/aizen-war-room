@@ -12,9 +12,13 @@ export async function controlApiRequest(request: Request, path: string, method =
   }
   const headers = new Headers();
   headers.set("X-Control-Api-Secret", runtime.CONTROL_API_SECRET);
-  for (const name of ["Authorization", "Cookie", "Content-Type"]) {
+  for (const name of ["Cookie", "Content-Type"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
+  }
+  const authorization = request.headers.get("Authorization");
+  if (authorization && /^Bearer\s+\S+/i.test(authorization)) {
+    headers.set("Authorization", authorization);
   }
   const response = await fetch(new URL(path, runtime.CONTROL_API_URL), {
     method,

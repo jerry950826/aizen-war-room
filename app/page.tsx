@@ -56,7 +56,7 @@ const services: Array<{
 const initialPermissions: Record<string, Record<ServiceId, boolean>> = {
   maggie: { leave: true, claims: true, instructors: true },
   rita: { leave: true, claims: true, instructors: false },
-  jerry: { leave: false, claims: true, instructors: true },
+  jerry: { leave: true, claims: true, instructors: true },
   emily: { leave: true, claims: true, instructors: true },
   james: { leave: true, claims: true, instructors: true },
   pearlchen: { leave: true, claims: true, instructors: true },
