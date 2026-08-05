@@ -20,3 +20,23 @@ export const sessions = sqliteTable("sessions", {
   email: text("email").notNull(),
   expiresAt: integer("expires_at").notNull(),
 });
+
+export const organizationProfiles = sqliteTable("organization_profiles", {
+  email: text("email").primaryKey(),
+  department: text("department").notNull(),
+  level: integer("level").notNull().default(3),
+  jobTitle: text("job_title").notNull(),
+  englishName: text("english_name").notNull(),
+  chineseName: text("chinese_name").notNull(),
+  phone: text("phone"),
+  birthday: text("birthday"),
+});
+
+export const auditLogs = sqliteTable("audit_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  actorEmail: text("actor_email"),
+  action: text("action").notNull(),
+  targetEmail: text("target_email"),
+  detailsJson: text("details_json"),
+  createdAt: integer("created_at").notNull(),
+});

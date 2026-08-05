@@ -99,7 +99,7 @@ const initialMembers: Member[] = [
   { email: "sinyunpan@ai-zens.com", name: "Sharlene 潘欣芸", role: "一般成員", active: true },
 ];
 
-const organizationPeople: OrgPerson[] = [
+const initialOrganizationPeople: OrgPerson[] = [
   { id: "maggie", department: "總經理室", level: 1, title: "總經理", english: "Maggie", name: "房美華", phone: "0937-138902", email: "maggiefang@ai-zens.com", birthday: "12-01" },
   { id: "emily", department: "技術部", level: 2, title: "前端工程師", english: "Emily", name: "張芷瑄", phone: "0970-672188", email: "emilychang@ai-zens.com", birthday: "06-10" },
   { id: "jerry", department: "技術部", level: 2, title: "前端工程師", english: "Jerry", name: "張廷", phone: "0975-750220", email: "jerrychang@ai-zens.com", birthday: "08-26" },
@@ -223,6 +223,7 @@ export default function Home() {
   const [showPassword, setShowPassword] = useState(false);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
+  const [organizationPeople, setOrganizationPeople] = useState(initialOrganizationPeople);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [editingEmail, setEditingEmail] = useState("");
@@ -315,10 +316,14 @@ export default function Home() {
     const data = await response.json() as {
       members: Array<Member & { active: number | boolean }>;
       permissions: Array<{ email: string; leave: number | boolean; claims: number | boolean; instructors: number | boolean }>;
+      organization: Array<OrgPerson & { level: number }>;
     };
     const memberList = data.members.map((member) => ({ ...member, active: Boolean(member.active) }));
     const permissionsByEmail = new Map(data.permissions.map((item) => [item.email, item]));
     setMembers(memberList);
+    if (data.organization?.length) {
+      setOrganizationPeople(data.organization.map((person) => ({ ...person, level: person.level as 1 | 2 | 3 })));
+    }
     setPermissions(Object.fromEntries(memberList.map((member) => {
       const item = permissionsByEmail.get(member.email);
       return [adminEmails[member.email] ?? member.email.split("@")[0], {
