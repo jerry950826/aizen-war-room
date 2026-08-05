@@ -183,6 +183,64 @@ async function authorize(request: Request, env: Env) {
   return json({ email: auth.session.email });
 }
 
+function instructorToken(request: Request) {
+  return request.headers.get("Authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1] ?? "";
+}
+
+async function instructorSessions(request: Request, env: Env) {
+  const token = instructorToken(request);
+  if (request.method === "POST") {
+    const body = await request.json<{ token?: string; userId?: string }>();
+    if (!body.token || !body.userId) return json({ error: "Invalid session" }, 400);
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM instructor_sessions WHERE expires_at<=?").bind(Date.now()),
+      env.DB.prepare("INSERT INTO instructor_sessions (token,user_id,expires_at) VALUES (?,?,?) ON CONFLICT(token) DO UPDATE SET user_id=excluded.user_id,expires_at=excluded.expires_at")
+        .bind(body.token, body.userId, Date.now() + 24 * 60 * 60 * 1000),
+    ]);
+    return json({ ok: true });
+  }
+  if (!token) return json({ error: "Unauthorized" }, 401);
+  if (request.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM instructor_sessions WHERE token=?").bind(token).run();
+    return json({ ok: true });
+  }
+  const row = await env.DB.prepare("SELECT user_id AS userId FROM instructor_sessions WHERE token=? AND expires_at>?")
+    .bind(token, Date.now()).first<{ userId: string }>();
+  return row ? json(row) : json({ error: "Unauthorized" }, 401);
+}
+
+async function instructorStore(request: Request, env: Env) {
+  if (request.method === "GET") {
+    const row = await env.DB.prepare("SELECT value,updated_at AS updatedAt FROM instructor_app_store WHERE key='schedule'").first();
+    return json(row ?? {});
+  }
+  const body = await request.json<{ value?: string; updatedAt?: string }>();
+  if (!body.value) return json({ error: "Invalid store" }, 400);
+  await env.DB.prepare("INSERT INTO instructor_app_store (key,value,updated_at) VALUES ('schedule',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at")
+    .bind(body.value, body.updatedAt || new Date().toISOString()).run();
+  return json({ ok: true });
+}
+
+async function instructorFeedback(request: Request, env: Env) {
+  if (request.method === "GET") {
+    const courseId = new URL(request.url).searchParams.get("course_id");
+    const result = courseId
+      ? await env.DB.prepare("SELECT * FROM instructor_feedback WHERE course_id=? ORDER BY created_at DESC").bind(courseId).all()
+      : await env.DB.prepare("SELECT * FROM instructor_feedback ORDER BY created_at DESC LIMIT 200").all();
+    return json({ feedback: result.results });
+  }
+  const body = await request.json<Record<string, unknown>>();
+  await env.DB.prepare(`INSERT INTO instructor_feedback (
+    id,course_id,course_title,cohort,course_start,teacher_id,teacher_name,teacher_email,
+    member_id,member_name,member_email,reflection,observation,follow_up,created_by,created_at
+  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
+    body.id, body.courseId, body.courseTitle, Number(body.cohort), body.courseStart,
+    body.teacherId, body.teacherName, body.teacherEmail || "", body.memberId, body.memberName,
+    body.memberEmail, body.reflection, body.observation || "", body.followUp || "", body.createdBy, body.createdAt,
+  ).run();
+  return json({ id: body.id, createdAt: body.createdAt }, 201);
+}
+
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (!env.CONTROL_API_SECRET || request.headers.get("X-Control-Api-Secret") !== env.CONTROL_API_SECRET) {
@@ -195,6 +253,9 @@ const worker = {
     if (pathname === "/control-state" && (request.method === "GET" || request.method === "POST")) return controlState(request, env);
     if (pathname === "/password" && request.method === "PUT") return passwordRoute(request, env);
     if (pathname === "/authorize" && request.method === "GET") return authorize(request, env);
+    if (pathname === "/instructor/sessions" && ["GET", "POST", "DELETE"].includes(request.method)) return instructorSessions(request, env);
+    if (pathname === "/instructor/store" && ["GET", "PUT"].includes(request.method)) return instructorStore(request, env);
+    if (pathname === "/instructor/feedback" && ["GET", "POST"].includes(request.method)) return instructorFeedback(request, env);
     return json({ error: "Not found" }, 404);
   },
 };
