@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aizen-warroom-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-05",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "warroom-api.ai-zens.com", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "aizen-warroom",
+      "database_id": "142075c1-dd01-4a92-b783-97f34d60484c"
+    }
+  ]
+}

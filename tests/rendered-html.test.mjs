@@ -14,26 +14,26 @@ test("人員名單提供姓名與公司信箱編輯介面", async () => {
 });
 
 test("伺服器同步更新人員、權限與登入紀錄", async () => {
-  const route = await readFile(new URL("../app/api/control-state/route.ts", import.meta.url), "utf8");
+  const route = await readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8");
 
   assert.match(route, /UPDATE members SET email=\?,name=\?,role=\?/);
   assert.match(route, /UPDATE permissions SET email=\?/);
   assert.match(route, /UPDATE sessions SET email=\?/);
   assert.match(route, /新信箱已被其他人使用/);
-  assert.match(route, /requireSession\(request, true\)/);
+  assert.match(route, /requireSession\(request, env, request\.method === "POST"\)/);
 });
 
 test("所有允許登入人員都有頁面權限且管理員可調整角色", async () => {
   const [page, route] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/api/control-state/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /setPermissions\(Object\.fromEntries\(memberList\.map/);
   assert.match(page, /<option value="一般成員">一般成員<\/option>/);
   assert.match(page, /<option value="管理員">管理員<\/option>/);
   assert.match(page, /role: editMemberRole/);
-  assert.match(route, /newRole !== "管理員" && newRole !== "一般成員"/);
+  assert.match(route, /body\.role !== "管理員" && body\.role !== "一般成員"/);
   assert.doesNotMatch(page, /disabled=\{member\.email === email\}/);
   assert.match(route, /系統至少需要保留一位可登入的管理員/);
   assert.match(route, /role='管理員' AND active=1 AND email!=\?/);
@@ -144,21 +144,22 @@ test("登入頁不預填特定帳號或密碼", async () => {
 
 test("登入憑證保存一天並可在重新整理後恢復", async () => {
   const [loginRoute, sessionRoute, page] = await Promise.all([
-    readFile(new URL("../app/api/war-room-login/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/war-room-session/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(loginRoute, /Max-Age=86400/);
   assert.match(loginRoute, /24 \* 60 \* 60 \* 1000/);
-  assert.match(sessionRoute, /requireSession\(request\)/);
+  assert.match(sessionRoute, /proxyControlApi\(request, "\/session"\)/);
   assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
 });
 
 test("三個業務系統都使用伺服器端登入交接", async () => {
-  const [page, route] = await Promise.all([
+  const [page, route, api] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/launch/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
   ]);
 
   assert.doesNotMatch(page, /dashboard-login/);
@@ -167,8 +168,8 @@ test("三個業務系統都使用伺服器端登入交接", async () => {
   assert.match(route, /DASHBOARD_SSO_SECRET/);
   assert.match(route, /DASHBOARD_URL/);
   assert.match(route, /userId,/);
-  assert.match(route, /SELECT leave,claims,instructors FROM permissions/);
-  assert.match(route, /你沒有此系統的存取權限/);
+  assert.match(route, /controlApiRequest\(request, `\/authorize\?service=\$\{service\}`\)/);
+  assert.match(api, /你沒有此系統的存取權限/);
   assert.match(route, /loginUrl\.searchParams\.set\("returnTo"/);
   assert.match(page, /returnTo === "leave" \|\| returnTo === "claims" \|\| returnTo === "instructors"/);
   assert.match(page, /window\.location\.assign\(`\/api\/launch\?service=\$\{returnTo\}`\)/);

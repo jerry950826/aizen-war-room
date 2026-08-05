@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
-import { base64Url, requireSession, signHandoff } from "../../../lib/control-db";
+import { controlApiRequest } from "../../../lib/control-api";
+import { base64Url, signHandoff } from "../../../lib/sso";
 
 const ADMIN_URL = "https://leaveflow-tw.jerry950826.chatgpt.site";
 const DASHBOARD_URL = "https://aizen-instructor-dashboard.jerry950826.chatgpt.site";
@@ -19,24 +20,21 @@ const dashboardUserIds: Record<string, string> = {
 };
 
 export async function GET(request: Request) {
-  const auth = await requireSession(request);
-  if (!auth) {
-    const loginUrl = new URL("/", request.url);
-    loginUrl.searchParams.set("returnTo", new URL(request.url).searchParams.get("service") || "dashboard");
-    return Response.redirect(loginUrl, 303);
-  }
-
   const service = new URL(request.url).searchParams.get("service");
   if (service !== "leave" && service !== "claims" && service !== "instructors") {
     return Response.json({ error: "不支援的系統" }, { status: 400 });
   }
-  const access = await auth.db.prepare(
-    "SELECT leave,claims,instructors FROM permissions WHERE email=?",
-  ).bind(auth.session.email).first<{ leave: number; claims: number; instructors: number }>();
-  if (!access?.[service]) return Response.json({ error: "你沒有此系統的存取權限" }, { status: 403 });
+  const authorization = await controlApiRequest(request, `/authorize?service=${service}`);
+  if (authorization.status === 401) {
+    const loginUrl = new URL("/", request.url);
+    loginUrl.searchParams.set("returnTo", service);
+    return Response.redirect(loginUrl, 303);
+  }
+  if (!authorization.ok) return authorization;
+  const { email } = await authorization.json() as { email: string };
   if (service === "instructors") {
     const secret = (env as unknown as { DASHBOARD_SSO_SECRET?: string }).DASHBOARD_SSO_SECRET || "";
-    const userId = dashboardUserIds[auth.session.email.toLowerCase()];
+    const userId = dashboardUserIds[email.toLowerCase()];
     if (!secret) return Response.json({ error: "講師看板登入交接尚未完成設定" }, { status: 503 });
     if (!userId) return Response.json({ error: "此帳號尚未開通講師看板" }, { status: 403 });
     const payload = base64Url(new TextEncoder().encode(JSON.stringify({
@@ -52,7 +50,7 @@ export async function GET(request: Request) {
   if (!secret) return Response.json({ error: "登入交接尚未完成設定" }, { status: 503 });
 
   const payload = base64Url(new TextEncoder().encode(JSON.stringify({
-    email: auth.session.email,
+    email,
     path,
     exp: Date.now() + 60 * 1000,
   })));
