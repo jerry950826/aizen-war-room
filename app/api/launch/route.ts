@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   const { email } = await authorization.json() as { email: string };
   if (service === "instructors") {
     const secret = (env as unknown as { DASHBOARD_SSO_SECRET?: string }).DASHBOARD_SSO_SECRET || "";
-    const userId = dashboardUserIds[email.toLowerCase()] || email.toLowerCase();
+    const userId = dashboardUserIds[email.toLowerCase()];
     if (!secret) return Response.json({ error: "講師看板登入交接尚未完成設定" }, { status: 503 });
     if (!userId) return Response.json({ error: "此帳號尚未開通講師看板" }, { status: 403 });
     const payload = base64Url(new TextEncoder().encode(JSON.stringify({
