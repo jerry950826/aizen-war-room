@@ -238,8 +238,9 @@ test("控制 API 雙寫新舊權限並優先讀取正規化權限", async () => 
 });
 
 test("講師看板排程資料會正規化並保留舊快照", async () => {
-  const [migration, schema, worker] = await Promise.all([
+  const [migration, orderingMigration, schema, worker] = await Promise.all([
     readFile(new URL("../db/d1/004-instructor-normalized-data.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/d1/005-instructor-sort-order.sql", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
   ]);
@@ -257,5 +258,10 @@ test("講師看板排程資料會正規化並保留舊快照", async () => {
   assert.match(migration, /json_each\(store\.value, '\$\.events'\)/);
   assert.match(worker, /INSERT INTO instructor_app_store/);
   assert.match(worker, /Invalid store JSON/);
+  assert.match(worker, /FROM instructor_course_events ORDER BY sort_order/);
+  assert.match(worker, /value: JSON\.stringify\(value\)/);
+  assert.match(orderingMigration, /ALTER TABLE instructor_course_events ADD COLUMN sort_order/);
+  assert.match(orderingMigration, /json_each\(store\.value, '\$\.events'\)/);
   assert.match(schema, /export const instructorCourseEvents/);
+  assert.match(schema, /sortOrder: integer\("sort_order"\)/);
 });

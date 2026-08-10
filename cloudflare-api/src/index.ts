@@ -241,8 +241,39 @@ async function instructorSessions(request: Request, env: Env) {
 
 async function instructorStore(request: Request, env: Env) {
   if (request.method === "GET") {
-    const row = await env.DB.prepare("SELECT value,updated_at AS updatedAt FROM instructor_app_store WHERE key='schedule'").first();
-    return json(row ?? {});
+    const [meta, teachers, cohorts, events, templates, auditLogs] = await Promise.all([
+      env.DB.prepare("SELECT updated_at AS updatedAt FROM instructor_app_store WHERE key='schedule'").first<{ updatedAt: string }>(),
+      env.DB.prepare("SELECT id,name,email,phone FROM instructor_teachers ORDER BY sort_order").all(),
+      env.DB.prepare(`SELECT id,cohort,client,location,city,district,village,member_count AS memberCount,notes
+        FROM instructor_cohort_records ORDER BY sort_order`).all(),
+      env.DB.prepare(`SELECT id,series_id AS seriesId,cohort,client,title,start_at AS start,end_at AS end,
+        teacher_id AS teacherId,teacher_name AS teacherName,teacher_email AS teacherEmail,
+        teacher_phone AS teacherPhone,location,status,notes FROM instructor_course_events ORDER BY sort_order`).all(),
+      env.DB.prepare("SELECT id,name,subject,body FROM instructor_message_templates ORDER BY sort_order").all(),
+      env.DB.prepare("SELECT id,action,detail,occurred_at AS at FROM instructor_schedule_audit_logs ORDER BY sort_order").all(),
+    ]);
+    const updatedAt = meta?.updatedAt ?? new Date(0).toISOString();
+    const value = {
+      teachers: teachers.results,
+      cohortRecords: cohorts.results,
+      events: events.results.map((event) => ({
+        ...event,
+        teacher: {
+          id: event.teacherId,
+          name: event.teacherName,
+          email: event.teacherEmail,
+          phone: event.teacherPhone,
+        },
+        teacherId: undefined,
+        teacherName: undefined,
+        teacherEmail: undefined,
+        teacherPhone: undefined,
+      })),
+      templates: templates.results,
+      auditLogs: auditLogs.results,
+      lastUpdatedAt: updatedAt,
+    };
+    return json({ value: JSON.stringify(value), updatedAt });
   }
   const body = await request.json<{ value?: string; updatedAt?: string }>();
   if (!body.value) return json({ error: "Invalid store" }, 400);
@@ -260,36 +291,36 @@ async function instructorStore(request: Request, env: Env) {
     env.DB.prepare("DELETE FROM instructor_course_events"),
     env.DB.prepare("DELETE FROM instructor_message_templates"),
     env.DB.prepare("DELETE FROM instructor_schedule_audit_logs"),
-    env.DB.prepare(`INSERT INTO instructor_teachers (id,name,email,phone,updated_at)
+    env.DB.prepare(`INSERT INTO instructor_teachers (id,name,email,phone,updated_at,sort_order)
       SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.name'),''),
-        COALESCE(json_extract(value,'$.email'),''),COALESCE(json_extract(value,'$.phone'),''),?
+        COALESCE(json_extract(value,'$.email'),''),COALESCE(json_extract(value,'$.phone'),''),?,CAST(key AS INTEGER)
       FROM json_each(?,'$.teachers')`).bind(updatedAt, body.value),
     env.DB.prepare(`INSERT INTO instructor_cohort_records
-      (id,cohort,client,location,city,district,village,member_count,notes,updated_at)
+      (id,cohort,client,location,city,district,village,member_count,notes,updated_at,sort_order)
       SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.cohort'),0),
         COALESCE(json_extract(value,'$.client'),''),COALESCE(json_extract(value,'$.location'),''),
         COALESCE(json_extract(value,'$.city'),''),COALESCE(json_extract(value,'$.district'),''),
         COALESCE(json_extract(value,'$.village'),''),COALESCE(json_extract(value,'$.memberCount'),0),
-        COALESCE(json_extract(value,'$.notes'),''),?
+        COALESCE(json_extract(value,'$.notes'),''),?,CAST(key AS INTEGER)
       FROM json_each(?,'$.cohortRecords')`).bind(updatedAt, body.value),
     env.DB.prepare(`INSERT INTO instructor_course_events
       (id,series_id,cohort,client,title,start_at,end_at,teacher_id,teacher_name,teacher_email,
-       teacher_phone,location,status,notes,updated_at)
+       teacher_phone,location,status,notes,updated_at,sort_order)
       SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.seriesId'),''),
         COALESCE(json_extract(value,'$.cohort'),0),COALESCE(json_extract(value,'$.client'),''),
         COALESCE(json_extract(value,'$.title'),''),COALESCE(json_extract(value,'$.start'),''),
         COALESCE(json_extract(value,'$.end'),''),COALESCE(json_extract(value,'$.teacher.id'),''),
         COALESCE(json_extract(value,'$.teacher.name'),''),COALESCE(json_extract(value,'$.teacher.email'),''),
         COALESCE(json_extract(value,'$.teacher.phone'),''),COALESCE(json_extract(value,'$.location'),''),
-        COALESCE(json_extract(value,'$.status'),''),COALESCE(json_extract(value,'$.notes'),''),?
+        COALESCE(json_extract(value,'$.status'),''),COALESCE(json_extract(value,'$.notes'),''),?,CAST(key AS INTEGER)
       FROM json_each(?,'$.events')`).bind(updatedAt, body.value),
-    env.DB.prepare(`INSERT INTO instructor_message_templates (id,name,subject,body,updated_at)
+    env.DB.prepare(`INSERT INTO instructor_message_templates (id,name,subject,body,updated_at,sort_order)
       SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.name'),''),
-        COALESCE(json_extract(value,'$.subject'),''),COALESCE(json_extract(value,'$.body'),''),?
+        COALESCE(json_extract(value,'$.subject'),''),COALESCE(json_extract(value,'$.body'),''),?,CAST(key AS INTEGER)
       FROM json_each(?,'$.templates')`).bind(updatedAt, body.value),
-    env.DB.prepare(`INSERT INTO instructor_schedule_audit_logs (id,action,detail,occurred_at)
+    env.DB.prepare(`INSERT INTO instructor_schedule_audit_logs (id,action,detail,occurred_at,sort_order)
       SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.action'),''),
-        COALESCE(json_extract(value,'$.detail'),''),COALESCE(json_extract(value,'$.at'),'')
+        COALESCE(json_extract(value,'$.detail'),''),COALESCE(json_extract(value,'$.at'),''),CAST(key AS INTEGER)
       FROM json_each(?,'$.auditLogs')`).bind(body.value),
   ]);
   return json({ ok: true });

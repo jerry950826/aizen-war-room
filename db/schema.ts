@@ -82,6 +82,7 @@ export const instructorTeachers = sqliteTable("instructor_teachers", {
   email: text("email").notNull().default(""),
   phone: text("phone").notNull().default(""),
   updatedAt: text("updated_at").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 export const instructorCohortRecords = sqliteTable("instructor_cohort_records", {
@@ -95,6 +96,7 @@ export const instructorCohortRecords = sqliteTable("instructor_cohort_records", 
   memberCount: integer("member_count").notNull().default(0),
   notes: text("notes").notNull().default(""),
   updatedAt: text("updated_at").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 export const instructorCourseEvents = sqliteTable("instructor_course_events", {
@@ -113,6 +115,7 @@ export const instructorCourseEvents = sqliteTable("instructor_course_events", {
   status: text("status").notNull().default(""),
   notes: text("notes").notNull().default(""),
   updatedAt: text("updated_at").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 export const instructorMessageTemplates = sqliteTable("instructor_message_templates", {
@@ -121,6 +124,7 @@ export const instructorMessageTemplates = sqliteTable("instructor_message_templa
   subject: text("subject").notNull().default(""),
   body: text("body").notNull().default(""),
   updatedAt: text("updated_at").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
 
 export const instructorScheduleAuditLogs = sqliteTable("instructor_schedule_audit_logs", {
@@ -128,4 +132,5 @@ export const instructorScheduleAuditLogs = sqliteTable("instructor_schedule_audi
   action: text("action").notNull(),
   detail: text("detail").notNull().default(""),
   occurredAt: text("occurred_at").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
 });
