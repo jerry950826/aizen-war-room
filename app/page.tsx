@@ -7,7 +7,7 @@ type ServiceId = "leave" | "claims" | "instructors";
 type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
 type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string; birthday: string | null };
 
-const services: Array<{
+type Service = {
   id: ServiceId;
   eyebrow: string;
   title: string;
@@ -17,7 +17,9 @@ const services: Array<{
   color: string;
   icon: string;
   url: string;
-}> = [
+};
+
+const initialServices: Service[] = [
   {
     id: "leave",
     eyebrow: "人事作業",
@@ -221,6 +223,7 @@ export default function Home() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [services, setServices] = useState(initialServices);
   const [permissions, setPermissions] = useState(initialPermissions);
   const [members, setMembers] = useState(initialMembers);
   const [organizationPeople, setOrganizationPeople] = useState(initialOrganizationPeople);
@@ -317,6 +320,8 @@ export default function Home() {
       members: Array<Member & { active: number | boolean }>;
       permissions: Array<{ email: string; leave: number | boolean; claims: number | boolean; instructors: number | boolean }>;
       organization: Array<OrgPerson & { level: number }>;
+      systems?: Array<{ id: string; name: string; category: string; description: string; launchUrl: string; color: string; icon: string; active: number | boolean; sortOrder: number }>;
+      systemPermissions?: Array<{ email: string; systemId: string; canAccess: number | boolean }>;
     };
     const memberList = data.members.map((member) => ({ ...member, active: Boolean(member.active) }));
     const permissionsByEmail = new Map(data.permissions.map((item) => [item.email, item]));
@@ -324,12 +329,34 @@ export default function Home() {
     if (data.organization?.length) {
       setOrganizationPeople(data.organization.map((person) => ({ ...person, level: person.level as 1 | 2 | 3 })));
     }
+    if (data.systems?.length) {
+      const metrics: Record<ServiceId, Pick<Service, "metric" | "metricLabel">> = {
+        leave: { metric: "06", metricLabel: "待簽核" },
+        claims: { metric: "12", metricLabel: "處理中" },
+        instructors: { metric: "28", metricLabel: "本月場次" },
+      };
+      setServices(data.systems
+        .filter((system): system is typeof system & { id: ServiceId } => system.active !== false && ["leave", "claims", "instructors"].includes(system.id))
+        .map((system) => ({
+          id: system.id,
+          eyebrow: system.category,
+          title: system.name,
+          description: system.description,
+          color: system.color,
+          icon: system.icon,
+          url: system.launchUrl,
+          ...metrics[system.id],
+        })));
+    }
     setPermissions(Object.fromEntries(memberList.map((member) => {
       const item = permissionsByEmail.get(member.email);
+      const normalized = new Map((data.systemPermissions ?? [])
+        .filter((permission) => permission.email === member.email)
+        .map((permission) => [permission.systemId, Boolean(permission.canAccess)]));
       return [adminEmails[member.email] ?? member.email.split("@")[0], {
-        leave: item ? Boolean(item.leave) : true,
-        claims: item ? Boolean(item.claims) : true,
-        instructors: item ? Boolean(item.instructors) : true,
+        leave: normalized.get("leave") ?? (item ? Boolean(item.leave) : true),
+        claims: normalized.get("claims") ?? (item ? Boolean(item.claims) : true),
+        instructors: normalized.get("instructors") ?? (item ? Boolean(item.instructors) : true),
       }];
     })));
   };

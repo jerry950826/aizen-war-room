@@ -46,6 +46,9 @@ export async function ensureControlDb() {
     db.prepare("CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, email TEXT NOT NULL, expires_at INTEGER NOT NULL)"),
     db.prepare("CREATE TABLE IF NOT EXISTS organization_profiles (email TEXT PRIMARY KEY, department TEXT NOT NULL, level INTEGER NOT NULL DEFAULT 3, job_title TEXT NOT NULL, english_name TEXT NOT NULL, chinese_name TEXT NOT NULL, phone TEXT, birthday TEXT)"),
     db.prepare("CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, actor_email TEXT, action TEXT NOT NULL, target_email TEXT, details_json TEXT, created_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS departments (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, sort_order INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS systems (id TEXT PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL, launch_url TEXT NOT NULL, color TEXT NOT NULL, icon TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)"),
+    db.prepare("CREATE TABLE IF NOT EXISTS member_system_permissions (email TEXT NOT NULL, system_id TEXT NOT NULL, can_access INTEGER NOT NULL DEFAULT 1, updated_by TEXT, updated_at INTEGER NOT NULL, PRIMARY KEY (email,system_id))"),
   ];
   for (const [email, name, role] of seeds) {
     statements.push(

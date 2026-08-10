@@ -74,12 +74,22 @@ async function controlState(request: Request, env: Env) {
   const auth = await requireSession(request, env, request.method === "POST");
   if (!auth) return json({ error: request.method === "POST" ? "需要管理員權限" : "未登入" }, request.method === "POST" ? 403 : 401);
   if (request.method === "GET") {
-    const [members, permissions, organization] = await Promise.all([
+    const [members, permissions, organization, departments, systems, systemPermissions] = await Promise.all([
       env.DB.prepare("SELECT email,name,role,active FROM members ORDER BY role DESC,name").all(),
       env.DB.prepare("SELECT email,leave,claims,instructors FROM permissions").all(),
       env.DB.prepare("SELECT lower(english_name) AS id,department,level,job_title AS title,english_name AS english,chinese_name AS name,phone,email,birthday FROM organization_profiles ORDER BY level,department,english_name").all(),
+      env.DB.prepare("SELECT id,name,sort_order AS sortOrder,active FROM departments ORDER BY sort_order,name").all(),
+      env.DB.prepare("SELECT id,name,category,description,launch_url AS launchUrl,color,icon,active,sort_order AS sortOrder FROM systems ORDER BY sort_order,name").all(),
+      env.DB.prepare("SELECT email,system_id AS systemId,can_access AS canAccess,updated_by AS updatedBy,updated_at AS updatedAt FROM member_system_permissions").all(),
     ]);
-    return json({ members: members.results, permissions: permissions.results, organization: organization.results });
+    return json({
+      members: members.results,
+      permissions: permissions.results,
+      organization: organization.results,
+      departments: departments.results,
+      systems: systems.results,
+      systemPermissions: systemPermissions.results,
+    });
   }
 
   const body = await request.json<{
@@ -107,6 +117,12 @@ async function controlState(request: Request, env: Env) {
       env.DB.prepare("INSERT INTO members (email,name,role,active,password_hash) VALUES (?,?,?,?,?)")
         .bind(email, name, "一般成員", 1, await sha256("Ab123456")),
       env.DB.prepare("INSERT INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?)").bind(email, 1, 1, 1),
+      env.DB.prepare("INSERT INTO member_system_permissions (email,system_id,can_access,updated_by,updated_at) VALUES (?,?,?,?,?)")
+        .bind(email, "leave", 1, auth.session.email, Date.now()),
+      env.DB.prepare("INSERT INTO member_system_permissions (email,system_id,can_access,updated_by,updated_at) VALUES (?,?,?,?,?)")
+        .bind(email, "claims", 1, auth.session.email, Date.now()),
+      env.DB.prepare("INSERT INTO member_system_permissions (email,system_id,can_access,updated_by,updated_at) VALUES (?,?,?,?,?)")
+        .bind(email, "instructors", 1, auth.session.email, Date.now()),
       env.DB.prepare("INSERT INTO organization_profiles (email,department,level,job_title,english_name,chinese_name) VALUES (?,?,?,?,?,?)")
         .bind(email, "待確認", 3, "待確認", english, chinese),
     ]);
@@ -141,15 +157,28 @@ async function controlState(request: Request, env: Env) {
     } else if (body.action === "remove") {
       if (member.role === "管理員") return json({ error: "管理員不可直接移除，請先調整角色" }, 400);
       await env.DB.batch([
+        env.DB.prepare("DELETE FROM member_system_permissions WHERE email=?").bind(email),
         env.DB.prepare("DELETE FROM permissions WHERE email=?").bind(email),
         env.DB.prepare("DELETE FROM organization_profiles WHERE email=?").bind(email),
         env.DB.prepare("DELETE FROM sessions WHERE email=?").bind(email),
         env.DB.prepare("DELETE FROM members WHERE email=?").bind(email),
       ]);
     } else if (body.action === "permissions" && body.permissions) {
-      await env.DB.prepare(
-        "INSERT INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?) ON CONFLICT(email) DO UPDATE SET leave=excluded.leave,claims=excluded.claims,instructors=excluded.instructors",
-      ).bind(email, body.permissions.leave ? 1 : 0, body.permissions.claims ? 1 : 0, body.permissions.instructors ? 1 : 0).run();
+      const updatedAt = Date.now();
+      await env.DB.batch([
+        env.DB.prepare(
+          "INSERT INTO permissions (email,leave,claims,instructors) VALUES (?,?,?,?) ON CONFLICT(email) DO UPDATE SET leave=excluded.leave,claims=excluded.claims,instructors=excluded.instructors",
+        ).bind(email, body.permissions.leave ? 1 : 0, body.permissions.claims ? 1 : 0, body.permissions.instructors ? 1 : 0),
+        env.DB.prepare(
+          "INSERT INTO member_system_permissions (email,system_id,can_access,updated_by,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(email,system_id) DO UPDATE SET can_access=excluded.can_access,updated_by=excluded.updated_by,updated_at=excluded.updated_at",
+        ).bind(email, "leave", body.permissions.leave ? 1 : 0, auth.session.email, updatedAt),
+        env.DB.prepare(
+          "INSERT INTO member_system_permissions (email,system_id,can_access,updated_by,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(email,system_id) DO UPDATE SET can_access=excluded.can_access,updated_by=excluded.updated_by,updated_at=excluded.updated_at",
+        ).bind(email, "claims", body.permissions.claims ? 1 : 0, auth.session.email, updatedAt),
+        env.DB.prepare(
+          "INSERT INTO member_system_permissions (email,system_id,can_access,updated_by,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(email,system_id) DO UPDATE SET can_access=excluded.can_access,updated_by=excluded.updated_by,updated_at=excluded.updated_at",
+        ).bind(email, "instructors", body.permissions.instructors ? 1 : 0, auth.session.email, updatedAt),
+      ]);
     }
   }
   await audit(env, auth.session.email, `member.${body.action}`, email, body.permissions);
@@ -177,9 +206,10 @@ async function authorize(request: Request, env: Env) {
   if (!auth) return json({ error: "未登入" }, 401);
   const service = new URL(request.url).searchParams.get("service");
   if (service !== "leave" && service !== "claims" && service !== "instructors") return json({ error: "不支援的系統" }, 400);
-  const access = await env.DB.prepare("SELECT leave,claims,instructors FROM permissions WHERE email=?")
-    .bind(auth.session.email).first<Record<string, number>>();
-  if (!access?.[service]) return json({ error: "你沒有此系統的存取權限" }, 403);
+  const access = await env.DB.prepare(
+    "SELECT COALESCE((SELECT can_access FROM member_system_permissions WHERE email=? AND system_id=?),(SELECT CASE ? WHEN 'leave' THEN leave WHEN 'claims' THEN claims WHEN 'instructors' THEN instructors ELSE 0 END FROM permissions WHERE email=?),0) AS canAccess",
+  ).bind(auth.session.email, service, service, auth.session.email).first<{ canAccess: number }>();
+  if (!access?.canAccess) return json({ error: "你沒有此系統的存取權限" }, 403);
   return json({ email: auth.session.email });
 }
 

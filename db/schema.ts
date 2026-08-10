@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const members = sqliteTable("members", {
   email: text("email").primaryKey(),
@@ -40,3 +40,38 @@ export const auditLogs = sqliteTable("audit_logs", {
   detailsJson: text("details_json"),
   createdAt: integer("created_at").notNull(),
 });
+
+export const departments = sqliteTable("departments", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const systems = sqliteTable("systems", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  launchUrl: text("launch_url").notNull(),
+  color: text("color").notNull(),
+  icon: text("icon").notNull(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const memberSystemPermissions = sqliteTable(
+  "member_system_permissions",
+  {
+    email: text("email").notNull(),
+    systemId: text("system_id").notNull(),
+    canAccess: integer("can_access", { mode: "boolean" }).notNull().default(true),
+    updatedBy: text("updated_by"),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.email, table.systemId] })],
+);

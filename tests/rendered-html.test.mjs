@@ -209,3 +209,30 @@ test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {
   assert.match(styles, /\.fortune-metrics article \{ min-height: 132px; display: grid/);
   assert.match(styles, /\.fortune-page \.page-heading \{ align-items: flex-start; flex-direction: column/);
 });
+
+test("共用主檔 migration 將固定權限轉成可擴充的系統權限", async () => {
+  const [migration, schema, dictionary] = await Promise.all([
+    readFile(new URL("../db/d1/003-core-master-data.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../../docs/data-inventory.md", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS departments/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS systems/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS member_system_permissions/);
+  assert.match(migration, /SELECT p\.email, 'leave', p\.leave/);
+  assert.match(migration, /SELECT p\.email, 'claims', p\.claims/);
+  assert.match(migration, /SELECT p\.email, 'instructors', p\.instructors/);
+  assert.match(schema, /export const memberSystemPermissions/);
+  assert.match(dictionary, /每一類業務資料只能有一個權威來源/);
+});
+
+test("控制 API 雙寫新舊權限並優先讀取正規化權限", async () => {
+  const worker = await readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8");
+
+  assert.match(worker, /systemPermissions: systemPermissions\.results/);
+  assert.match(worker, /INSERT INTO member_system_permissions/);
+  assert.match(worker, /ON CONFLICT\(email,system_id\) DO UPDATE SET can_access=excluded\.can_access/);
+  assert.match(worker, /COALESCE\(\(SELECT can_access FROM member_system_permissions/);
+  assert.match(worker, /DELETE FROM member_system_permissions WHERE email=\?/);
+});
