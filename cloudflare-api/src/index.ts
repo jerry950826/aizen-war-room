@@ -246,8 +246,52 @@ async function instructorStore(request: Request, env: Env) {
   }
   const body = await request.json<{ value?: string; updatedAt?: string }>();
   if (!body.value) return json({ error: "Invalid store" }, 400);
-  await env.DB.prepare("INSERT INTO instructor_app_store (key,value,updated_at) VALUES ('schedule',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at")
-    .bind(body.value, body.updatedAt || new Date().toISOString()).run();
+  try {
+    JSON.parse(body.value);
+  } catch {
+    return json({ error: "Invalid store JSON" }, 400);
+  }
+  const updatedAt = body.updatedAt || new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO instructor_app_store (key,value,updated_at) VALUES ('schedule',?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at")
+      .bind(body.value, updatedAt),
+    env.DB.prepare("DELETE FROM instructor_teachers"),
+    env.DB.prepare("DELETE FROM instructor_cohort_records"),
+    env.DB.prepare("DELETE FROM instructor_course_events"),
+    env.DB.prepare("DELETE FROM instructor_message_templates"),
+    env.DB.prepare("DELETE FROM instructor_schedule_audit_logs"),
+    env.DB.prepare(`INSERT INTO instructor_teachers (id,name,email,phone,updated_at)
+      SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.name'),''),
+        COALESCE(json_extract(value,'$.email'),''),COALESCE(json_extract(value,'$.phone'),''),?
+      FROM json_each(?,'$.teachers')`).bind(updatedAt, body.value),
+    env.DB.prepare(`INSERT INTO instructor_cohort_records
+      (id,cohort,client,location,city,district,village,member_count,notes,updated_at)
+      SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.cohort'),0),
+        COALESCE(json_extract(value,'$.client'),''),COALESCE(json_extract(value,'$.location'),''),
+        COALESCE(json_extract(value,'$.city'),''),COALESCE(json_extract(value,'$.district'),''),
+        COALESCE(json_extract(value,'$.village'),''),COALESCE(json_extract(value,'$.memberCount'),0),
+        COALESCE(json_extract(value,'$.notes'),''),?
+      FROM json_each(?,'$.cohortRecords')`).bind(updatedAt, body.value),
+    env.DB.prepare(`INSERT INTO instructor_course_events
+      (id,series_id,cohort,client,title,start_at,end_at,teacher_id,teacher_name,teacher_email,
+       teacher_phone,location,status,notes,updated_at)
+      SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.seriesId'),''),
+        COALESCE(json_extract(value,'$.cohort'),0),COALESCE(json_extract(value,'$.client'),''),
+        COALESCE(json_extract(value,'$.title'),''),COALESCE(json_extract(value,'$.start'),''),
+        COALESCE(json_extract(value,'$.end'),''),COALESCE(json_extract(value,'$.teacher.id'),''),
+        COALESCE(json_extract(value,'$.teacher.name'),''),COALESCE(json_extract(value,'$.teacher.email'),''),
+        COALESCE(json_extract(value,'$.teacher.phone'),''),COALESCE(json_extract(value,'$.location'),''),
+        COALESCE(json_extract(value,'$.status'),''),COALESCE(json_extract(value,'$.notes'),''),?
+      FROM json_each(?,'$.events')`).bind(updatedAt, body.value),
+    env.DB.prepare(`INSERT INTO instructor_message_templates (id,name,subject,body,updated_at)
+      SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.name'),''),
+        COALESCE(json_extract(value,'$.subject'),''),COALESCE(json_extract(value,'$.body'),''),?
+      FROM json_each(?,'$.templates')`).bind(updatedAt, body.value),
+    env.DB.prepare(`INSERT INTO instructor_schedule_audit_logs (id,action,detail,occurred_at)
+      SELECT json_extract(value,'$.id'),COALESCE(json_extract(value,'$.action'),''),
+        COALESCE(json_extract(value,'$.detail'),''),COALESCE(json_extract(value,'$.at'),'')
+      FROM json_each(?,'$.auditLogs')`).bind(body.value),
+  ]);
   return json({ ok: true });
 }
 

@@ -22,6 +22,13 @@
       "when": 1786342412214,
       "tag": "0002_pale_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786344850932,
+      "tag": "0003_tense_swarm",
+      "breakpoints": true
     }
   ]
 }

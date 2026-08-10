@@ -75,3 +75,57 @@ export const memberSystemPermissions = sqliteTable(
   },
   (table) => [primaryKey({ columns: [table.email, table.systemId] })],
 );
+
+export const instructorTeachers = sqliteTable("instructor_teachers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const instructorCohortRecords = sqliteTable("instructor_cohort_records", {
+  id: text("id").primaryKey(),
+  cohort: integer("cohort").notNull(),
+  client: text("client").notNull().default(""),
+  location: text("location").notNull().default(""),
+  city: text("city").notNull().default(""),
+  district: text("district").notNull().default(""),
+  village: text("village").notNull().default(""),
+  memberCount: integer("member_count").notNull().default(0),
+  notes: text("notes").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const instructorCourseEvents = sqliteTable("instructor_course_events", {
+  id: text("id").primaryKey(),
+  seriesId: text("series_id").notNull().default(""),
+  cohort: integer("cohort").notNull(),
+  client: text("client").notNull().default(""),
+  title: text("title").notNull(),
+  startAt: text("start_at").notNull(),
+  endAt: text("end_at").notNull(),
+  teacherId: text("teacher_id").notNull().default(""),
+  teacherName: text("teacher_name").notNull().default(""),
+  teacherEmail: text("teacher_email").notNull().default(""),
+  teacherPhone: text("teacher_phone").notNull().default(""),
+  location: text("location").notNull().default(""),
+  status: text("status").notNull().default(""),
+  notes: text("notes").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const instructorMessageTemplates = sqliteTable("instructor_message_templates", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull().default(""),
+  body: text("body").notNull().default(""),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const instructorScheduleAuditLogs = sqliteTable("instructor_schedule_audit_logs", {
+  id: text("id").primaryKey(),
+  action: text("action").notNull(),
+  detail: text("detail").notNull().default(""),
+  occurredAt: text("occurred_at").notNull(),
+});

@@ -236,3 +236,26 @@ test("控制 API 雙寫新舊權限並優先讀取正規化權限", async () => 
   assert.match(worker, /COALESCE\(\(SELECT can_access FROM member_system_permissions/);
   assert.match(worker, /DELETE FROM member_system_permissions WHERE email=\?/);
 });
+
+test("講師看板排程資料會正規化並保留舊快照", async () => {
+  const [migration, schema, worker] = await Promise.all([
+    readFile(new URL("../db/d1/004-instructor-normalized-data.sql", import.meta.url), "utf8"),
+    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
+    readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
+  ]);
+
+  for (const table of [
+    "instructor_teachers",
+    "instructor_cohort_records",
+    "instructor_course_events",
+    "instructor_message_templates",
+    "instructor_schedule_audit_logs",
+  ]) {
+    assert.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`));
+    assert.match(worker, new RegExp(`INSERT INTO ${table}`));
+  }
+  assert.match(migration, /json_each\(store\.value, '\$\.events'\)/);
+  assert.match(worker, /INSERT INTO instructor_app_store/);
+  assert.match(worker, /Invalid store JSON/);
+  assert.match(schema, /export const instructorCourseEvents/);
+});
