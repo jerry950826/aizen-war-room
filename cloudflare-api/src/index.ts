@@ -242,12 +242,8 @@ async function instructorSessions(request: Request, env: Env) {
 async function instructorStore(request: Request, env: Env) {
   if (request.method === "GET") {
     const [meta, teachers, cohorts, events, templates, auditLogs] = await Promise.all([
-      env.DB.prepare("SELECT updated_at AS updatedAt FROM instructor_app_store WHERE key='schedule'").first<{ updatedAt: string }>(),
-      env.DB.prepare(`SELECT t.id,t.name,t.email,t.phone,
-        COALESCE((SELECT CASE WHEN json_extract(j.value,'$.active')=0 THEN 0 ELSE 1 END
-          FROM instructor_app_store s,json_each(s.value,'$.teachers') j
-          WHERE s.key='schedule' AND json_extract(j.value,'$.id')=t.id LIMIT 1),1) AS active
-        FROM instructor_teachers t ORDER BY active DESC,t.sort_order`).all(),
+      env.DB.prepare("SELECT value,updated_at AS updatedAt FROM instructor_app_store WHERE key='schedule'").first<{ value: string; updatedAt: string }>(),
+      env.DB.prepare("SELECT id,name,email,phone FROM instructor_teachers ORDER BY sort_order").all(),
       env.DB.prepare(`SELECT id,cohort,client,location,city,district,village,member_count AS memberCount,notes
         FROM instructor_cohort_records ORDER BY sort_order`).all(),
       env.DB.prepare(`SELECT id,series_id AS seriesId,cohort,client,title,start_at AS start,end_at AS end,
@@ -257,8 +253,27 @@ async function instructorStore(request: Request, env: Env) {
       env.DB.prepare("SELECT id,action,detail,occurred_at AS at FROM instructor_schedule_audit_logs ORDER BY sort_order").all(),
     ]);
     const updatedAt = meta?.updatedAt ?? new Date(0).toISOString();
+    const persistedStore = meta?.value ? JSON.parse(meta.value) as {
+      inactiveTeacherKeys?: string[];
+      teachers?: Array<{ id?: string; name?: string; email?: string; active?: boolean }>;
+    } : {};
+    const inactiveTeacherKeys = new Set(
+      (persistedStore.inactiveTeacherKeys || []).map((key) => String(key).trim().toLowerCase()),
+    );
+    for (const teacher of persistedStore.teachers || []) {
+      if (teacher.active === false) {
+        const key = String(teacher.email || teacher.name || "").trim().toLowerCase();
+        if (key) inactiveTeacherKeys.add(key);
+      }
+    }
+    const normalizedTeachers = teachers.results.map((teacher) => {
+      const item = teacher as { id: string; name: string; email: string; phone: string };
+      const key = String(item.email || item.name || "").trim().toLowerCase();
+      return { ...item, active: !inactiveTeacherKeys.has(key) };
+    });
     const value = {
-      teachers: teachers.results,
+      teachers: normalizedTeachers,
+      inactiveTeacherKeys: [...inactiveTeacherKeys],
       cohortRecords: cohorts.results,
       events: events.results.map((event) => ({
         ...event,
