@@ -264,4 +264,6 @@ test("講師看板排程資料會正規化並保留舊快照", async () => {
   assert.match(orderingMigration, /json_each\(store\.value, '\$\.events'\)/);
   assert.match(schema, /export const instructorCourseEvents/);
   assert.match(schema, /sortOrder: integer\("sort_order"\)/);
+  assert.match(worker, /json_extract\(j\.value,'\$\.active'\)/);
+  assert.match(worker, /ORDER BY active DESC,t\.sort_order/);
 });

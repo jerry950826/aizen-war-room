@@ -243,7 +243,11 @@ async function instructorStore(request: Request, env: Env) {
   if (request.method === "GET") {
     const [meta, teachers, cohorts, events, templates, auditLogs] = await Promise.all([
       env.DB.prepare("SELECT updated_at AS updatedAt FROM instructor_app_store WHERE key='schedule'").first<{ updatedAt: string }>(),
-      env.DB.prepare("SELECT id,name,email,phone FROM instructor_teachers ORDER BY sort_order").all(),
+      env.DB.prepare(`SELECT t.id,t.name,t.email,t.phone,
+        COALESCE((SELECT CASE WHEN json_extract(j.value,'$.active')=0 THEN 0 ELSE 1 END
+          FROM instructor_app_store s,json_each(s.value,'$.teachers') j
+          WHERE s.key='schedule' AND json_extract(j.value,'$.id')=t.id LIMIT 1),1) AS active
+        FROM instructor_teachers t ORDER BY active DESC,t.sort_order`).all(),
       env.DB.prepare(`SELECT id,cohort,client,location,city,district,village,member_count AS memberCount,notes
         FROM instructor_cohort_records ORDER BY sort_order`).all(),
       env.DB.prepare(`SELECT id,series_id AS seriesId,cohort,client,title,start_at AS start,end_at AS end,
