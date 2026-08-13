@@ -175,7 +175,10 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(route, /今天工作上可以這樣做：/);
   assert.match(route, /translated\.push\(await translateToTraditionalChinese\(removeAstrologyTerms\(text\)\)\)/);
   assert.match(route, /chineseCharacters < 12/);
-  assert.match(route, /Cache-Control.*public, max-age=90000, s-maxage=90000/);
+  assert.match(route, /SELECT status,result_json FROM daily_fortunes/);
+  assert.match(route, /INSERT OR IGNORE INTO daily_fortunes/);
+  assert.match(route, /UPDATE daily_fortunes SET status='ready',result_json=/);
+  assert.match(route, /Cache-Control.*private, no-store/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}&format=plain-v2`/);
   assert.match(page, /apiFortune\?\.horoscope/);
   assert.match(page, /API 暫時無法使用/);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
+import { controlApiRequest } from "../../../lib/control-api";
 
 const apiBaseUrl = "https://freehoroscopeapi.com/api/v1";
 const astroJsonBaseUrl = "https://api.astrojson.com/v1/horoscopes";
@@ -114,6 +115,30 @@ async function getDailyAstroJson(sign: string, apiKey: string) {
   return response.json();
 }
 
+type StoredFortune = {
+  date?: string;
+  sign?: string;
+  horoscope: string;
+  aspects: { career: string; finance: string; health: string; romance: string };
+  scores?: { general?: number; career?: number; finance?: number; health?: number; romance?: number };
+  source: string;
+};
+
+async function getSignedInEmail(request: Request) {
+  const response = await controlApiRequest(request, "/session", "GET");
+  if (!response.ok) return null;
+  const session = await response.json() as { email?: string };
+  return session.email?.trim().toLowerCase() || null;
+}
+
+async function readStoredFortune(email: string, date: string, sign: string) {
+  const row = await env.DB.prepare(
+    "SELECT status,result_json FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
+  ).bind(email, date, sign).first<{ status: string; result_json: string | null }>();
+  if (row?.status !== "ready" || !row.result_json) return null;
+  return JSON.parse(row.result_json) as StoredFortune;
+}
+
 export async function GET(request: NextRequest) {
   const sign = request.nextUrl.searchParams.get("sign")?.toLowerCase() ?? "";
   if (!zodiacSigns.has(sign)) {
@@ -121,7 +146,39 @@ export async function GET(request: NextRequest) {
   }
 
   let failureStage = "astrojson";
+  let claimedEmail = "";
+  let claimedDate = "";
+  let claimedSign = "";
+  let claimedOwnerToken = "";
   try {
+    const email = await getSignedInEmail(request);
+    if (!email) return NextResponse.json({ error: "請先登入" }, { status: 401 });
+    const fortuneDate = taipeiDayKey();
+    await env.DB.prepare(
+      "CREATE TABLE IF NOT EXISTS daily_fortunes (email TEXT NOT NULL, fortune_date TEXT NOT NULL, sign TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', owner_token TEXT NOT NULL, result_json TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (email,fortune_date,sign))",
+    ).run();
+    const stored = await readStoredFortune(email, fortuneDate, sign);
+    if (stored) return NextResponse.json(stored, { headers: { "Cache-Control": "private, no-store" } });
+
+    const ownerToken = crypto.randomUUID();
+    const now = Date.now();
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO daily_fortunes (email,fortune_date,sign,status,owner_token,created_at,updated_at) VALUES (?,?,?,'pending',?,?,?)",
+    ).bind(email, fortuneDate, sign, ownerToken, now, now).run();
+    const claim = await env.DB.prepare(
+      "SELECT status,owner_token,result_json FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
+    ).bind(email, fortuneDate, sign).first<{ status: string; owner_token: string; result_json: string | null }>();
+    if (claim?.status === "ready" && claim.result_json) {
+      return NextResponse.json(JSON.parse(claim.result_json), { headers: { "Cache-Control": "private, no-store" } });
+    }
+    if (claim?.owner_token !== ownerToken) {
+      return NextResponse.json({ error: "今日運勢正在準備中，請稍後再試" }, { status: 202 });
+    }
+    claimedEmail = email;
+    claimedDate = fortuneDate;
+    claimedSign = sign;
+    claimedOwnerToken = ownerToken;
+
     const apiKey = (env as { ASTROJSON_API_KEY?: string }).ASTROJSON_API_KEY;
     if (!apiKey) throw new Error("AstroJson API key is not configured");
     const result = await getDailyAstroJson(sign, apiKey) as {
@@ -151,17 +208,24 @@ export async function GET(request: NextRequest) {
     const finance = makePlainChinese(financeText, "finance");
     const health = makePlainChinese(healthText, "health");
     const romance = makePlainChinese(romanceText, "romance");
-    return NextResponse.json({
+    const fortuneResult: StoredFortune = {
       date: result.date,
       sign: result.sign,
       horoscope: general,
       aspects: { career, finance, health, romance },
       scores: result.horoscopeScore,
       source: "astrojson-daily-cache-plain-zh-tw",
-    }, {
-      headers: { "Cache-Control": "public, max-age=90000, s-maxage=90000" },
-    });
+    };
+    await env.DB.prepare(
+      "UPDATE daily_fortunes SET status='ready',result_json=?,updated_at=? WHERE email=? AND fortune_date=? AND sign=? AND owner_token=?",
+    ).bind(JSON.stringify(fortuneResult), Date.now(), email, fortuneDate, sign, ownerToken).run();
+    return NextResponse.json(fortuneResult, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
+    if (claimedOwnerToken) {
+      await env.DB.prepare(
+        "DELETE FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=? AND owner_token=? AND status='pending'",
+      ).bind(claimedEmail, claimedDate, claimedSign, claimedOwnerToken).run().catch(() => null);
+    }
     return NextResponse.json({ error: "今日 API 運勢暫時無法取得", stage: failureStage }, { status: 503 });
   }
 }

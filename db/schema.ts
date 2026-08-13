@@ -21,6 +21,21 @@ export const sessions = sqliteTable("sessions", {
   expiresAt: integer("expires_at").notNull(),
 });
 
+export const dailyFortunes = sqliteTable(
+  "daily_fortunes",
+  {
+    email: text("email").notNull(),
+    fortuneDate: text("fortune_date").notNull(),
+    sign: text("sign").notNull(),
+    status: text("status").notNull().default("pending"),
+    ownerToken: text("owner_token").notNull(),
+    resultJson: text("result_json"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.email, table.fortuneDate, table.sign] })],
+);
+
 export const organizationProfiles = sqliteTable("organization_profiles", {
   email: text("email").primaryKey(),
   department: text("department").notNull(),
