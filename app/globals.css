@@ -74,6 +74,8 @@ button { color: inherit; }
 .sidebar-bottom { margin-top: auto; min-height: 82px; border-top: 1px solid #24577f; display: flex; align-items: center; padding: 18px 18px; gap: 8px; }
 .user-chip { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .avatar, .admin-name i { width: 35px; height: 35px; border-radius: 9px; display: grid; place-items: center; background: #0073df; color: white; font-style: normal; font-weight: 800; }
+.avatar { position: relative; flex: 0 0 35px; overflow: hidden; }
+.avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .user-chip b { display: block; font-size: 12px; }
 .user-chip span { display: block; color: #83aac8; font-size: 9px; margin-top: 3px; }
 .logout { border: 0; background: transparent; color: #83aac8; cursor: pointer; font-size: 19px; }

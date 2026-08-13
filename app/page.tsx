@@ -265,6 +265,7 @@ export default function Home() {
   const signedInOrgPerson = organizationPeople.find(
     (person) => person.email === email || signedInMember?.name.startsWith(`${person.english} `),
   );
+  const avatarEnglishName = signedInOrgPerson?.english ?? profile.english;
   const zodiac = zodiacFor(signedInOrgPerson?.birthday ?? null);
   const fortune = useMemo(() => {
     const dayKey = currentDay.key;
@@ -653,7 +654,14 @@ export default function Home() {
         </nav>
         <div className="sidebar-bottom">
           <div className="user-chip">
-            <div className="avatar">{profile.name[0]}</div>
+            <div className="avatar" aria-label={`${profile.name}的照片`}>
+              <span aria-hidden="true">{profile.name[0]}</span>
+              <img
+                src={`/members/${avatarEnglishName}.png`}
+                alt=""
+                onError={(event) => { event.currentTarget.style.display = "none"; }}
+              />
+            </div>
             <div><b>{profile.name}</b><span>{profile.title}</span></div>
           </div>
           <button className="logout" onClick={() => void logout()} aria-label="登出">↪</button>

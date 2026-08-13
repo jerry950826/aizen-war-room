@@ -155,6 +155,18 @@ test("登入憑證保存一天並可在重新整理後恢復", async () => {
   assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
 });
 
+test("左下角依登入同仁顯示個人照片", async () => {
+  const [page, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /const avatarEnglishName = signedInOrgPerson\?\.english \?\? profile\.english/);
+  assert.match(page, /src=\{`\/members\/\$\{avatarEnglishName\}\.png`\}/);
+  assert.match(page, /onError=\{\(event\) => \{ event\.currentTarget\.style\.display = "none"; \}\}/);
+  assert.match(styles, /\.avatar img \{[^}]*object-fit: cover/);
+});
+
 test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   const [page, route, controlWorker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
