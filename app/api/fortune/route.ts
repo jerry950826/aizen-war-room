@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "不支援的星座" }, { status: 400 });
   }
 
+  let failureStage = "astrojson";
   try {
     const apiKey = (env as { ASTROJSON_API_KEY?: string }).ASTROJSON_API_KEY;
     if (!apiKey) throw new Error("AstroJson API key is not configured");
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
     if (!horoscope?.general || !horoscope.career || !horoscope.finance || !horoscope.health || !horoscope.romance) {
       throw new Error("AstroJson returned an incomplete response");
     }
+    failureStage = "translation";
     const translated: string[] = [];
     for (const text of [horoscope.general, horoscope.career, horoscope.finance, horoscope.health, horoscope.romance]) {
       translated.push(await translateToTraditionalChinese(text));
@@ -96,7 +98,7 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "public, max-age=21600, s-maxage=21600" },
     });
   } catch {
-    return NextResponse.json({ error: "今日 API 運勢暫時無法取得" }, { status: 503 });
+    return NextResponse.json({ error: "今日 API 運勢暫時無法取得", stage: failureStage }, { status: 503 });
   }
 }
 
