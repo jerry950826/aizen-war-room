@@ -188,7 +188,7 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(page, /cache: "no-store"/);
 });
 
-test("塔羅牌提供五張牌選擇、翻牌與正逆位解讀", async () => {
+test("抽籤提供五支籤與吉凶行動提醒", async () => {
   const [page, styles, route] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
@@ -196,16 +196,17 @@ test("塔羅牌提供五張牌選擇、翻牌與正逆位解讀", async () => {
   ]);
 
   assert.match(page, /\[0, 1, 2, 3, 4\]\.map/);
-  assert.match(page, /選一張今天最有感覺的牌/);
+  assert.match(page, /憑直覺選一支籤/);
   assert.match(page, /drawTarot\(slot\)/);
-  assert.match(route, /\/tarot\/cards/);
-  assert.match(route, /translateToTraditionalChinese\(card\.name, 1\)/);
-  assert.match(page, /每日塔羅/);
-  assert.match(page, /選這張/);
-  assert.doesNotMatch(page, /DAILY TAROT|CHOOSE ME|Free Horoscope/);
+  assert.match(route, /name: "大吉"/);
+  assert.match(route, /name: "大凶"/);
+  assert.match(route, /source: "local-fortune-lots"/);
+  assert.match(page, /今日抽籤/);
+  assert.match(page, /選這支/);
+  assert.doesNotMatch(page, /每日塔羅|DAILY TAROT|CHOOSE ME|Free Horoscope/);
   assert.match(styles, /\.api-insight-grid p \{[^}]*font-size: 15px/);
   assert.match(styles, /\.api-insight-grid span b \{[^}]*background: linear-gradient/);
-  assert.match(route, /orientation: reversed \? "reversed" : "upright"/);
+  assert.match(route, /arcana: "籤詩"/);
   assert.match(styles, /\.tarot-choice\.chosen \.tarot-card-inner \{ transform: rotateY\(180deg\)/);
   assert.match(styles, /@keyframes tarot-reveal/);
 });

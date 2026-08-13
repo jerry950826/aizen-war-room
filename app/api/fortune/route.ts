@@ -2,29 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 import { controlApiRequest } from "../../../lib/control-api";
 
-const apiBaseUrl = "https://freehoroscopeapi.com/api/v1";
 const astroJsonBaseUrl = "https://api.astrojson.com/v1/horoscopes";
 const zodiacSigns = new Set([
   "aries", "taurus", "gemini", "cancer", "leo", "virgo",
   "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
 ]);
-
-type TarotCard = {
-  type: "major" | "minor";
-  name: string;
-  name_short: string;
-  meaning_up: string;
-  meaning_rev: string;
-  desc: string;
-};
-
-const fallbackCards: TarotCard[] = [
-  { type: "major", name: "The Fool", name_short: "ar00", meaning_up: "新的開始、自由與相信直覺。", meaning_rev: "先停一下，別讓衝動替你做決定。", desc: "旅人站在新旅程的起點。" },
-  { type: "major", name: "The Magician", name_short: "ar01", meaning_up: "資源已在手上，現在適合主動展開。", meaning_rev: "重新確認目的，別把力氣用錯地方。", desc: "魔術師提醒你把想法化為行動。" },
-  { type: "major", name: "The High Priestess", name_short: "ar02", meaning_up: "安靜觀察，答案正在直覺裡成形。", meaning_rev: "雜音太多，先留一點空間給自己。", desc: "女祭司象徵直覺與尚未揭開的訊息。" },
-  { type: "major", name: "The Sun", name_short: "ar19", meaning_up: "清晰、活力與值得分享的好消息。", meaning_rev: "光仍然在，只是需要調整期待。", desc: "太陽帶來坦率、溫暖與生命力。" },
-  { type: "major", name: "The World", name_short: "ar21", meaning_up: "一段歷程完成，成果值得被肯定。", meaning_rev: "最後一步尚未完成，耐心把它收好。", desc: "世界象徵完成、整合與新的循環。" },
-];
 
 async function fetchJson(url: string) {
   const response = await fetch(url, {
@@ -221,35 +203,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "請從五張牌中選擇一張" }, { status: 400 });
   }
 
-  let cards = fallbackCards;
-  let source = "fallback";
-  try {
-    const result = await fetchJson(`${apiBaseUrl}/tarot/cards`) as { cards?: TarotCard[] };
-    if (Array.isArray(result.cards) && result.cards.length) {
-      cards = result.cards;
-      source = "api";
-    }
-  } catch {
-    // The local cards keep the draw usable when the free provider is unavailable.
-  }
-
+  const fortunes = [
+    { name: "大吉", meaning: "今天很適合主動往前走，想做的事情可以放心開始。", description: "行動提醒：把握眼前的好機會，重要的事優先處理。" },
+    { name: "吉", meaning: "今天整體順利，只要照原本的節奏走，就容易有好結果。", description: "行動提醒：穩穩完成手上的事，不需要急著一次做到完美。" },
+    { name: "中吉", meaning: "今天有好有壞，但只要保持耐心，事情會慢慢往好的方向走。", description: "行動提醒：遇到卡關先停一下，換個方法再試。" },
+    { name: "小吉", meaning: "今天的小確幸藏在細節裡，放慢一點會更容易發現。", description: "行動提醒：先完成一件小事，累積成就感再繼續。" },
+    { name: "末吉", meaning: "今天不必急著看到成果，先把基礎做好，之後會越來越順。", description: "行動提醒：少做重大決定，多整理、確認與準備。" },
+    { name: "凶", meaning: "今天容易不耐煩或遇到小阻礙，慢一點反而比較安全。", description: "行動提醒：避免衝動答應、花錢或回話，重要決定明天再確認。" },
+    { name: "大凶", meaning: "今天可能比較累、心情也容易受影響，先照顧好自己最重要。", description: "行動提醒：不勉強、不硬撐，避開爭執與高風險決定。" },
+  ];
   const random = crypto.getRandomValues(new Uint32Array(1))[0];
-  const card = cards[(random + slot * 17) % cards.length];
-  const reversed = ((random >>> 3) + slot) % 4 === 0;
-  const [translatedName, translatedMeaning, translatedDescription] = await Promise.all([
-    translateToTraditionalChinese(card.name, 1),
-    translateToTraditionalChinese(reversed ? card.meaning_rev : card.meaning_up),
-    translateToTraditionalChinese(card.desc),
-  ]);
+  const fortune = fortunes[(random + slot * 17) % fortunes.length];
   return NextResponse.json({
     card: {
-      name: translatedName,
-      code: card.name_short,
-      arcana: card.type,
-      orientation: reversed ? "reversed" : "upright",
-      meaning: translatedMeaning,
-      description: translatedDescription,
+      name: fortune.name,
+      code: `lot-${slot + 1}`,
+      arcana: "籤詩",
+      orientation: "upright",
+      meaning: fortune.meaning,
+      description: fortune.description,
     },
-    source,
+    source: "local-fortune-lots",
   });
 }

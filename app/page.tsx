@@ -731,10 +731,10 @@ export default function Home() {
             </section>}
             <section className="tarot-section">
               <div className="tarot-heading">
-                <div><span>每日塔羅</span><h2>選一張今天最有感覺的牌</h2><p>先放慢一下，憑第一直覺選擇。每次進入可抽一張，翻牌後再看今日提醒。</p></div>
-                {tarotResult && <button type="button" onClick={resetTarot}>重新洗牌</button>}
+                <div><span>今日抽籤</span><h2>憑直覺選一支籤</h2><p>靜下心想著今天最在意的事，再選一支最有感覺的籤。</p></div>
+                {tarotResult && <button type="button" onClick={resetTarot}>重新抽籤</button>}
               </div>
-              <div className={`tarot-deck ${tarotResult ? "has-result" : ""}`} aria-label="五張塔羅牌，請選擇一張">
+              <div className={`tarot-deck ${tarotResult ? "has-result" : ""}`} aria-label="五支籤，請選擇一支">
                 {[0, 1, 2, 3, 4].map((slot) => {
                   const chosen = selectedTarotSlot === slot;
                   return (
@@ -744,23 +744,23 @@ export default function Home() {
                       key={slot}
                       onClick={() => drawTarot(slot)}
                       disabled={tarotBusy || Boolean(tarotResult)}
-                      aria-label={`選擇第 ${slot + 1} 張塔羅牌`}
+                      aria-label={`選擇第 ${slot + 1} 支籤`}
                     >
                       <span className="tarot-card-inner">
-                        <span className="tarot-card-back"><i>✦</i><b>{slot + 1}</b><small>選這張</small></span>
-                        <span className="tarot-card-front"><i>{tarotResult?.orientation === "reversed" ? "☾" : "☀"}</i><b>{tarotResult?.name}</b><small>{tarotResult?.orientation === "reversed" ? "逆位" : "正位"}</small></span>
+                        <span className="tarot-card-back"><i>籤</i><b>{slot + 1}</b><small>選這支</small></span>
+                        <span className="tarot-card-front"><i>福</i><b>{tarotResult?.name}</b><small>今日籤運</small></span>
                       </span>
                     </button>
                   );
                 })}
               </div>
-              {tarotBusy && <p className="tarot-loading">正在為你翻開這張牌…</p>}
+              {tarotBusy && <p className="tarot-loading">正在為你抽出今日籤運…</p>}
               {tarotResult && (
                 <article className="tarot-reading">
-                  <div><span>{tarotResult.arcana === "major" ? "大阿爾克那" : "小阿爾克那"}</span><h3>{tarotResult.name}・{tarotResult.orientation === "reversed" ? "逆位" : "正位"}</h3></div>
+                  <div><span>今日籤運</span><h3>{tarotResult.name}</h3></div>
                   <p className="tarot-meaning">{tarotResult.meaning}</p>
                   <p>{tarotResult.description}</p>
-                  <small>牌義資料來自免費塔羅資料服務，內容已翻譯為繁體中文，僅供日常靈感參考。</small>
+                  <small>抽籤內容僅供日常提醒與心情參考。</small>
                 </article>
               )}
             </section>
