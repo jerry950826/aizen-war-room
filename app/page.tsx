@@ -92,10 +92,6 @@ const userProfiles: Record<string, { english: string; name: string; department: 
   james: { english: "James", name: "簡侑俊", department: "技術部", title: "後端工程師" },
 };
 
-const memberAvatarFiles: Record<string, string> = {
-  Sean: "Bean",
-};
-
 const initialMembers: Member[] = [
   { email: "maggiefang@ai-zens.com", name: "Maggie 房美華", role: "管理員", active: true },
   { email: "ritahsieh@ai-zens.com", name: "Rita 謝雨如", role: "管理員", active: true },
@@ -270,7 +266,6 @@ export default function Home() {
     (person) => person.email === email || signedInMember?.name.startsWith(`${person.english} `),
   );
   const avatarEnglishName = signedInOrgPerson?.english ?? profile.english;
-  const avatarFileName = memberAvatarFiles[avatarEnglishName] ?? avatarEnglishName;
   const zodiac = zodiacFor(signedInOrgPerson?.birthday ?? null);
   const fortune = useMemo(() => {
     const dayKey = currentDay.key;
@@ -662,7 +657,7 @@ export default function Home() {
             <div className="avatar" aria-label={`${profile.name}的照片`}>
               <span aria-hidden="true">{profile.name[0]}</span>
               <img
-                src={`/members/${avatarFileName}.png`}
+                src={`/members/${avatarEnglishName}.png`}
                 alt=""
                 onError={(event) => { event.currentTarget.style.display = "none"; }}
               />
@@ -838,7 +833,7 @@ export default function Home() {
               <div className="organization-leader">
                 {organizationPeople.filter((person) => person.level === 1).map((person) => {
                   const member = organizationMember(person);
-                  return <button type="button" className="organization-person featured" key={person.id} onClick={() => setSelectedOrgPerson(person)}><b>{member?.name ?? `${person.english} ${person.name}`}</b><span>{person.title}</span><small>查看聯絡資訊</small></button>;
+                  return <button type="button" className="organization-person featured" key={person.id} onClick={() => setSelectedOrgPerson(person)}><i className="organization-avatar" aria-hidden="true"><em>{person.english[0]}</em><img src={`/members/${person.english}.png`} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }} /></i><b>{member?.name ?? `${person.english} ${person.name}`}</b><span>{person.title}</span><small>查看聯絡資訊</small></button>;
                 })}
               </div>
               <div className="organization-trunk" />
@@ -852,7 +847,7 @@ export default function Home() {
                       <div>
                         {departmentPeople.map((person) => {
                           const member = organizationMember(person);
-                          return <button type="button" className="organization-person" key={person.id} onClick={() => setSelectedOrgPerson(person)}><b>{member?.name ?? `${person.english} ${person.name}`}</b><span>{person.title}</span><small>查看</small></button>;
+                          return <button type="button" className="organization-person" key={person.id} onClick={() => setSelectedOrgPerson(person)}><i className="organization-avatar" aria-hidden="true"><em>{person.english[0]}</em><img src={`/members/${person.english}.png`} alt="" onError={(event) => { event.currentTarget.style.display = "none"; }} /></i><b>{member?.name ?? `${person.english} ${person.name}`}</b><span>{person.title}</span><small>查看</small></button>;
                         })}
                       </div>
                     </section>
