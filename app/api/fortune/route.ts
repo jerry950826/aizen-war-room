@@ -41,7 +41,8 @@ async function translateToTraditionalChinese(text: string) {
     responseData?: { translatedText?: string };
   };
   const translatedText = result.responseData?.translatedText?.trim();
-  if (!translatedText || (result.responseStatus && result.responseStatus !== 200)) {
+  const chineseCharacters = translatedText?.match(/[\u3400-\u9fff]/g)?.length ?? 0;
+  if (!translatedText || chineseCharacters < 12 || (result.responseStatus && result.responseStatus !== 200)) {
     throw new Error("Translation API returned an incomplete response");
   }
   return translatedText;
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
     if (!result.data?.horoscope) throw new Error("Fortune API returned an incomplete response");
     const horoscope = await translateToTraditionalChinese(result.data.horoscope);
     return NextResponse.json({ ...result.data, horoscope, source: "api-translated" }, {
-      headers: { "Cache-Control": "public, max-age=900, s-maxage=21600, stale-while-revalidate=86400" },
+      headers: { "Cache-Control": "private, no-store" },
     });
   } catch {
     return NextResponse.json({ error: "今日 API 運勢暫時無法取得" }, { status: 503 });

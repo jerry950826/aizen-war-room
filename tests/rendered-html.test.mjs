@@ -166,11 +166,13 @@ test("今日運勢串接免費 API 並在失敗時保留內建內容", async () 
   assert.match(route, /api\.mymemory\.translated\.net\/get/);
   assert.match(route, /langpair", "en\|zh-TW"/);
   assert.match(route, /translateToTraditionalChinese\(result\.data\.horoscope\)/);
-  assert.match(route, /Cache-Control/);
+  assert.match(route, /chineseCharacters < 12/);
+  assert.match(route, /Cache-Control.*private, no-store/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}`/);
   assert.match(page, /apiHoroscope \|\| fortune\.summary/);
   assert.match(page, /內建運勢・API 暫時無法使用/);
   assert.match(page, /每日運勢 API・繁體中文/);
+  assert.match(page, /cache: "no-store"/);
 });
 
 test("塔羅牌提供五張牌選擇、翻牌與正逆位解讀", async () => {
@@ -239,6 +241,10 @@ test("今日運勢以 API 長文為主並支援響應式版面", async () => {
   ]);
 
   assert.match(page, /className="fortune-hero fortune-api-hero"/);
+  assert.match(page, /className="api-insight-grid"/);
+  assert.match(page, /今日重點/);
+  assert.match(page, /行動方向/);
+  assert.match(page, /給自己的提醒/);
   assert.match(styles, /\.fortune-api-hero \{ min-height: 330px; grid-template-columns: minmax\(0, 1fr\) 190px/);
   assert.match(styles, /\.fortune-api-hero \.fortune-summary p \{ max-width: 760px; font-size: 16px; line-height: 2/);
   assert.match(styles, /\.fortune-page \.page-heading \{ align-items: flex-start; flex-direction: column/);

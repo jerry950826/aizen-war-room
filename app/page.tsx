@@ -287,11 +287,20 @@ export default function Home() {
       socialCode: ["先聽再說", "直接但溫柔", "多問一句", "記得回覆", "保持幽默", "給彼此空間"][(seed >>> 21) % 6],
     };
   }, [email, currentDay.key, currentDay.fortune, signedInOrgPerson?.birthday]);
+  const fortuneInsights = useMemo(() => {
+    const content = apiHoroscope || fortune.summary;
+    const sentences = content.split(/(?<=[。！？])/).map((sentence) => sentence.trim()).filter(Boolean);
+    return [
+      { label: "今日重點", icon: "✦", text: sentences[0] || content },
+      { label: "行動方向", icon: "→", text: sentences[1] || sentences[0] || content },
+      { label: "給自己的提醒", icon: "☼", text: sentences.slice(2).join("") || sentences.at(-1) || content },
+    ];
+  }, [apiHoroscope, fortune.summary]);
 
   useEffect(() => {
     if (!loggedIn || view !== "fortune") return;
     const controller = new AbortController();
-    fetch(`/api/fortune?sign=${zodiac.apiSign}`, { signal: controller.signal })
+    fetch(`/api/fortune?sign=${zodiac.apiSign}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("API unavailable");
         return response.json() as Promise<{ horoscope?: string }>;
@@ -709,6 +718,14 @@ export default function Home() {
                 </small>
               </div>
               <div className="fortune-orbit"><i /><b>{zodiac.icon}</b><span>{zodiac.name}</span></div>
+            </section>
+            <section className="api-insight-grid" aria-label="今日運勢重點">
+              {fortuneInsights.map((insight) => (
+                <article key={insight.label}>
+                  <i>{insight.icon}</i>
+                  <div><span>{insight.label}</span><p>{insight.text}</p></div>
+                </article>
+              ))}
             </section>
             <section className="tarot-section">
               <div className="tarot-heading">
