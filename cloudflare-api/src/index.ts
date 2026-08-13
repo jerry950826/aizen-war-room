@@ -70,6 +70,51 @@ async function sessionRoute(request: Request, env: Env) {
   return member ? json(member) : json({ error: "帳號已停用" }, 401);
 }
 
+async function dailyFortuneCache(request: Request, env: Env) {
+  const auth = await requireSession(request, env);
+  if (!auth) return json({ error: "請先登入" }, 401);
+  await env.DB.prepare(
+    "CREATE TABLE IF NOT EXISTS daily_fortunes (email TEXT NOT NULL, fortune_date TEXT NOT NULL, sign TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', owner_token TEXT NOT NULL, result_json TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (email,fortune_date,sign))",
+  ).run();
+  if (request.method === "GET") {
+    const url = new URL(request.url);
+    const date = url.searchParams.get("date") ?? "";
+    const sign = url.searchParams.get("sign") ?? "";
+    const row = await env.DB.prepare(
+      "SELECT status,result_json AS resultJson FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
+    ).bind(auth.session.email, date, sign).first();
+    return json({ row });
+  }
+  const body = await request.json<{ action?: string; date?: string; sign?: string; ownerToken?: string; result?: unknown }>();
+  const date = body.date ?? "";
+  const sign = body.sign ?? "";
+  const ownerToken = body.ownerToken ?? "";
+  if (!date || !sign || !ownerToken) return json({ error: "缺少每日運勢資料" }, 400);
+  if (body.action === "claim") {
+    const now = Date.now();
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO daily_fortunes (email,fortune_date,sign,status,owner_token,created_at,updated_at) VALUES (?,?,?,'pending',?,?,?)",
+    ).bind(auth.session.email, date, sign, ownerToken, now, now).run();
+    const row = await env.DB.prepare(
+      "SELECT status,owner_token AS ownerToken,result_json AS resultJson FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
+    ).bind(auth.session.email, date, sign).first();
+    return json({ row });
+  }
+  if (body.action === "store") {
+    await env.DB.prepare(
+      "UPDATE daily_fortunes SET status='ready',result_json=?,updated_at=? WHERE email=? AND fortune_date=? AND sign=? AND owner_token=?",
+    ).bind(JSON.stringify(body.result), Date.now(), auth.session.email, date, sign, ownerToken).run();
+    return json({ ok: true });
+  }
+  if (body.action === "release") {
+    await env.DB.prepare(
+      "DELETE FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=? AND owner_token=? AND status='pending'",
+    ).bind(auth.session.email, date, sign, ownerToken).run();
+    return json({ ok: true });
+  }
+  return json({ error: "不支援的每日運勢操作" }, 400);
+}
+
 async function controlState(request: Request, env: Env) {
   const auth = await requireSession(request, env, request.method === "POST");
   if (!auth) return json({ error: request.method === "POST" ? "需要管理員權限" : "未登入" }, request.method === "POST" ? 403 : 401);
@@ -374,6 +419,7 @@ const worker = {
     if (pathname === "/health") return json({ ok: true, database: "aizen-warroom" });
     if (pathname === "/login" && request.method === "POST") return login(request, env);
     if (pathname === "/session" && (request.method === "GET" || request.method === "DELETE")) return sessionRoute(request, env);
+    if (pathname === "/fortune-cache" && ["GET", "POST"].includes(request.method)) return dailyFortuneCache(request, env);
     if (pathname === "/control-state" && (request.method === "GET" || request.method === "POST")) return controlState(request, env);
     if (pathname === "/password" && request.method === "PUT") return passwordRoute(request, env);
     if (pathname === "/authorize" && request.method === "GET") return authorize(request, env);

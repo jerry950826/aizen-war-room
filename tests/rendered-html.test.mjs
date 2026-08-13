@@ -156,9 +156,10 @@ test("登入憑證保存一天並可在重新整理後恢復", async () => {
 });
 
 test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
-  const [page, route] = await Promise.all([
+  const [page, route, controlWorker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/fortune/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../cloudflare-api/src/index.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(route, /https:\/\/freehoroscopeapi\.com\/api\/v1/);
@@ -175,9 +176,10 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(route, /今天工作上可以這樣做：/);
   assert.match(route, /translated\.push\(await translateToTraditionalChinese\(removeAstrologyTerms\(text\)\)\)/);
   assert.match(route, /chineseCharacters < 12/);
-  assert.match(route, /SELECT status,result_json FROM daily_fortunes/);
-  assert.match(route, /INSERT OR IGNORE INTO daily_fortunes/);
-  assert.match(route, /UPDATE daily_fortunes SET status='ready',result_json=/);
+  assert.match(controlWorker, /SELECT status,result_json AS resultJson FROM daily_fortunes/);
+  assert.match(controlWorker, /INSERT OR IGNORE INTO daily_fortunes/);
+  assert.match(controlWorker, /UPDATE daily_fortunes SET status='ready',result_json=/);
+  assert.match(controlWorker, /pathname === "\/fortune-cache"/);
   assert.match(route, /Cache-Control.*private, no-store/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}&format=plain-v2`/);
   assert.match(page, /apiFortune\?\.horoscope/);

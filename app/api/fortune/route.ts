@@ -124,19 +124,13 @@ type StoredFortune = {
   source: string;
 };
 
-async function getSignedInEmail(request: Request) {
-  const response = await controlApiRequest(request, "/session", "GET");
-  if (!response.ok) return null;
-  const session = await response.json() as { email?: string };
-  return session.email?.trim().toLowerCase() || null;
-}
-
-async function readStoredFortune(email: string, date: string, sign: string) {
-  const row = await env.DB.prepare(
-    "SELECT status,result_json FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
-  ).bind(email, date, sign).first<{ status: string; result_json: string | null }>();
-  if (row?.status !== "ready" || !row.result_json) return null;
-  return JSON.parse(row.result_json) as StoredFortune;
+async function fortuneCacheRequest(request: Request, path: string, body?: unknown) {
+  const cacheRequest = body === undefined ? request : new Request(request.url, {
+    method: "POST",
+    headers: { Cookie: request.headers.get("Cookie") ?? "", "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return controlApiRequest(cacheRequest, path, body === undefined ? "GET" : "POST");
 }
 
 export async function GET(request: NextRequest) {
@@ -146,35 +140,27 @@ export async function GET(request: NextRequest) {
   }
 
   let failureStage = "astrojson";
-  let claimedEmail = "";
   let claimedDate = "";
   let claimedSign = "";
   let claimedOwnerToken = "";
   try {
-    const email = await getSignedInEmail(request);
-    if (!email) return NextResponse.json({ error: "請先登入" }, { status: 401 });
     const fortuneDate = taipeiDayKey();
-    await env.DB.prepare(
-      "CREATE TABLE IF NOT EXISTS daily_fortunes (email TEXT NOT NULL, fortune_date TEXT NOT NULL, sign TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', owner_token TEXT NOT NULL, result_json TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, PRIMARY KEY (email,fortune_date,sign))",
-    ).run();
-    const stored = await readStoredFortune(email, fortuneDate, sign);
-    if (stored) return NextResponse.json(stored, { headers: { "Cache-Control": "private, no-store" } });
+    const lookup = await fortuneCacheRequest(request, `/fortune-cache?date=${encodeURIComponent(fortuneDate)}&sign=${encodeURIComponent(sign)}`);
+    if (!lookup.ok) return NextResponse.json({ error: "請先登入" }, { status: lookup.status });
+    const lookupData = await lookup.json() as { row?: { status?: string; resultJson?: string | null } };
+    if (lookupData.row?.status === "ready" && lookupData.row.resultJson) {
+      return NextResponse.json(JSON.parse(lookupData.row.resultJson), { headers: { "Cache-Control": "private, no-store" } });
+    }
 
     const ownerToken = crypto.randomUUID();
-    const now = Date.now();
-    await env.DB.prepare(
-      "INSERT OR IGNORE INTO daily_fortunes (email,fortune_date,sign,status,owner_token,created_at,updated_at) VALUES (?,?,?,'pending',?,?,?)",
-    ).bind(email, fortuneDate, sign, ownerToken, now, now).run();
-    const claim = await env.DB.prepare(
-      "SELECT status,owner_token,result_json FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
-    ).bind(email, fortuneDate, sign).first<{ status: string; owner_token: string; result_json: string | null }>();
-    if (claim?.status === "ready" && claim.result_json) {
-      return NextResponse.json(JSON.parse(claim.result_json), { headers: { "Cache-Control": "private, no-store" } });
+    const claimResponse = await fortuneCacheRequest(request, "/fortune-cache", { action: "claim", date: fortuneDate, sign, ownerToken });
+    const claimData = await claimResponse.json() as { row?: { status?: string; ownerToken?: string; resultJson?: string | null } };
+    if (claimData.row?.status === "ready" && claimData.row.resultJson) {
+      return NextResponse.json(JSON.parse(claimData.row.resultJson), { headers: { "Cache-Control": "private, no-store" } });
     }
-    if (claim?.owner_token !== ownerToken) {
+    if (claimData.row?.ownerToken !== ownerToken) {
       return NextResponse.json({ error: "今日運勢正在準備中，請稍後再試" }, { status: 202 });
     }
-    claimedEmail = email;
     claimedDate = fortuneDate;
     claimedSign = sign;
     claimedOwnerToken = ownerToken;
@@ -216,15 +202,13 @@ export async function GET(request: NextRequest) {
       scores: result.horoscopeScore,
       source: "astrojson-daily-cache-plain-zh-tw",
     };
-    await env.DB.prepare(
-      "UPDATE daily_fortunes SET status='ready',result_json=?,updated_at=? WHERE email=? AND fortune_date=? AND sign=? AND owner_token=?",
-    ).bind(JSON.stringify(fortuneResult), Date.now(), email, fortuneDate, sign, ownerToken).run();
+    await fortuneCacheRequest(request, "/fortune-cache", { action: "store", date: fortuneDate, sign, ownerToken, result: fortuneResult });
     return NextResponse.json(fortuneResult, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     if (claimedOwnerToken) {
-      await env.DB.prepare(
-        "DELETE FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=? AND owner_token=? AND status='pending'",
-      ).bind(claimedEmail, claimedDate, claimedSign, claimedOwnerToken).run().catch(() => null);
+      await fortuneCacheRequest(request, "/fortune-cache", {
+        action: "release", date: claimedDate, sign: claimedSign, ownerToken: claimedOwnerToken,
+      }).catch(() => null);
     }
     return NextResponse.json({ error: "今日 API 運勢暫時無法取得", stage: failureStage }, { status: 503 });
   }
