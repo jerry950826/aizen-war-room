@@ -706,7 +706,7 @@ export default function Home() {
                 <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・今日關鍵字：{fortune.keyword}</small></span></div>
                 <span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{apiHoroscope || fortune.summary}</p>
                 <small className={`fortune-source ${horoscopeStatus}`}>
-                  {horoscopeStatus === "api" ? "FREE HOROSCOPE API・今日更新" : horoscopeStatus === "fallback" ? "內建運勢・API 暫時無法使用" : "正在讀取今日星象…"}
+                  {horoscopeStatus === "api" ? "每日運勢 API・繁體中文" : horoscopeStatus === "fallback" ? "內建運勢・API 暫時無法使用" : "正在讀取今日星象…"}
                 </small>
               </div>
               <div className="fortune-orbit"><i /><b>{zodiac.icon}</b><span>{zodiac.name}</span></div>

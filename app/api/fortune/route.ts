@@ -32,6 +32,21 @@ async function fetchJson(url: string) {
   return response.json() as Promise<unknown>;
 }
 
+async function translateToTraditionalChinese(text: string) {
+  const translationUrl = new URL("https://api.mymemory.translated.net/get");
+  translationUrl.searchParams.set("q", text.slice(0, 450));
+  translationUrl.searchParams.set("langpair", "en|zh-TW");
+  const result = await fetchJson(translationUrl.toString()) as {
+    responseStatus?: number;
+    responseData?: { translatedText?: string };
+  };
+  const translatedText = result.responseData?.translatedText?.trim();
+  if (!translatedText || (result.responseStatus && result.responseStatus !== 200)) {
+    throw new Error("Translation API returned an incomplete response");
+  }
+  return translatedText;
+}
+
 export async function GET(request: NextRequest) {
   const sign = request.nextUrl.searchParams.get("sign")?.toLowerCase() ?? "";
   if (!zodiacSigns.has(sign)) {
@@ -43,7 +58,8 @@ export async function GET(request: NextRequest) {
       data?: { date?: string; sign?: string; horoscope?: string };
     };
     if (!result.data?.horoscope) throw new Error("Fortune API returned an incomplete response");
-    return NextResponse.json({ ...result.data, source: "api" }, {
+    const horoscope = await translateToTraditionalChinese(result.data.horoscope);
+    return NextResponse.json({ ...result.data, horoscope, source: "api-translated" }, {
       headers: { "Cache-Control": "public, max-age=900, s-maxage=21600, stale-while-revalidate=86400" },
     });
   } catch {

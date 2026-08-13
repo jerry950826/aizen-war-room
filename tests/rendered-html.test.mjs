@@ -163,10 +163,14 @@ test("今日運勢串接免費 API 並在失敗時保留內建內容", async () 
 
   assert.match(route, /https:\/\/freehoroscopeapi\.com\/api\/v1/);
   assert.match(route, /get-horoscope\/daily\?sign=/);
+  assert.match(route, /api\.mymemory\.translated\.net\/get/);
+  assert.match(route, /langpair", "en\|zh-TW"/);
+  assert.match(route, /translateToTraditionalChinese\(result\.data\.horoscope\)/);
   assert.match(route, /Cache-Control/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}`/);
   assert.match(page, /apiHoroscope \|\| fortune\.summary/);
   assert.match(page, /內建運勢・API 暫時無法使用/);
+  assert.match(page, /每日運勢 API・繁體中文/);
 });
 
 test("塔羅牌提供五張牌選擇、翻牌與正逆位解讀", async () => {
