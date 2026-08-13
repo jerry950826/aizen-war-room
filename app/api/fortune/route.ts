@@ -35,16 +35,16 @@ async function fetchJson(url: string) {
 }
 
 async function translateToTraditionalChinese(text: string) {
-  const translationUrl = new URL("https://api.mymemory.translated.net/get");
-  translationUrl.searchParams.set("q", text.slice(0, 450));
-  translationUrl.searchParams.set("langpair", "en|zh-TW");
-  const result = await fetchJson(translationUrl.toString()) as {
-    responseStatus?: number;
-    responseData?: { translatedText?: string };
-  };
-  const translatedText = result.responseData?.translatedText?.trim();
+  const translationUrl = new URL("https://translate.googleapis.com/translate_a/single");
+  translationUrl.searchParams.set("client", "gtx");
+  translationUrl.searchParams.set("sl", "en");
+  translationUrl.searchParams.set("tl", "zh-TW");
+  translationUrl.searchParams.set("dt", "t");
+  translationUrl.searchParams.set("q", text);
+  const result = await fetchJson(translationUrl.toString()) as Array<Array<Array<string>>>;
+  const translatedText = result[0]?.map((segment) => segment[0]).join("").trim();
   const chineseCharacters = translatedText?.match(/[\u3400-\u9fff]/g)?.length ?? 0;
-  if (!translatedText || chineseCharacters < 12 || (result.responseStatus && result.responseStatus !== 200)) {
+  if (!translatedText || chineseCharacters < 12) {
     throw new Error("Translation API returned an incomplete response");
   }
   return translatedText;

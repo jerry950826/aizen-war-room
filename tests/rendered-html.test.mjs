@@ -166,7 +166,7 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(route, /"X-API-KEY": apiKey/);
   assert.match(route, /horoscope\?\.general/);
   assert.match(route, /aspects: \{ career, finance, health, romance \}/);
-  assert.match(route, /api\.mymemory\.translated\.net\/get/);
+  assert.match(route, /translate\.googleapis\.com\/translate_a\/single/);
   assert.match(route, /langpair", "en\|zh-TW"/);
   assert.match(route, /translated\.push\(await translateToTraditionalChinese\(text\)\)/);
   assert.match(route, /chineseCharacters < 12/);
