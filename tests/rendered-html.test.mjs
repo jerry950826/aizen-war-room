@@ -155,7 +155,7 @@ test("登入憑證保存一天並可在重新整理後恢復", async () => {
   assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
 });
 
-test("今日運勢串接免費 API 並在失敗時保留內建內容", async () => {
+test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   const [page, route] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/fortune/route.ts", import.meta.url), "utf8"),
@@ -173,7 +173,7 @@ test("今日運勢串接免費 API 並在失敗時保留內建內容", async () 
   assert.match(route, /Cache-Control.*private, no-store/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}`/);
   assert.match(page, /apiFortune\?\.horoscope/);
-  assert.match(page, /內建運勢・API 暫時無法使用/);
+  assert.match(page, /API 暫時無法使用/);
   assert.match(page, /AstroJson 每日運勢・繁體中文/);
   assert.match(page, /cache: "no-store"/);
 });
