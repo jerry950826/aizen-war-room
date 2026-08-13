@@ -170,8 +170,10 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(route, /"tl", "zh-TW"/);
   assert.match(route, /date=\$\{taipeiDayKey\(\)\}/);
   assert.match(route, /cacheTtl: 90000, cacheEverything: true/);
-  assert.match(route, /translated\.map\(makePlainChinese\)/);
-  assert.match(route, /translated\.push\(await translateToTraditionalChinese\(text\)\)/);
+  assert.match(route, /removeAstrologyTerms\(text\)/);
+  assert.match(route, /今天的心情：/);
+  assert.match(route, /今天工作上可以這樣做：/);
+  assert.match(route, /translated\.push\(await translateToTraditionalChinese\(removeAstrologyTerms\(text\)\)\)/);
   assert.match(route, /chineseCharacters < 12/);
   assert.match(route, /Cache-Control.*public, max-age=21600, s-maxage=21600/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}`/);

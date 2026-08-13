@@ -59,7 +59,18 @@ function taipeiDayKey() {
   }).format(new Date());
 }
 
-function makePlainChinese(text: string) {
+function removeAstrologyTerms(text: string) {
+  const astrologyTerms = /\b(?:Sun|Moon|Mercury|Venus|Mars|Jupiter|Saturn|Uranus|Neptune|Pluto|zodiac|planet|retrograde|transit|conjunction|opposition|square|trine|sextile|aspect|celestial|cosmic|lunar|solar|new moon|full moon)\b/i;
+  const sentences = text.match(/[^.!?]+[.!?]?/g) ?? [text];
+  const everydaySentences = sentences.filter((sentence) => !astrologyTerms.test(sentence));
+  if (everydaySentences.length) return everydaySentences.join(" ").trim();
+  return text
+    .replace(/\b(?:with|as|while|because)\s+(?:the\s+)?(?:Sun|Moon|Mercury|Venus|Mars|Jupiter|Saturn|Uranus|Neptune|Pluto)[^,.;]*[,.;]?/gi, "")
+    .replace(astrologyTerms, "today")
+    .trim();
+}
+
+function makePlainChinese(text: string, kind: "mood" | "finance" | "romance" | "career" | "health") {
   const replacements: Array<[RegExp, string]> = [
     [/財務狀況/g, "手頭上的錢"],
     [/財務/g, "金錢"],
@@ -79,8 +90,19 @@ function makePlainChinese(text: string) {
   ];
   let plain = text.replace(/\s+/g, "").replace(/；/g, "，");
   for (const [pattern, replacement] of replacements) plain = plain.replace(pattern, replacement);
+  plain = plain
+    .replace(/(?:太陽|月亮|水星|金星|火星|木星|土星|天王星|海王星|冥王星|新月|滿月|逆行|相位|星象|行星)[^，。！？]*[，。！？]?/g, "")
+    .replace(/今天今天/g, "今天");
   const sentences = plain.match(/[^。！？]+[。！？]?/g) ?? [plain];
-  return sentences.slice(0, 2).join("").trim();
+  const message = sentences.slice(0, 2).join("").trim();
+  const prefixes = {
+    mood: "今天的心情：",
+    finance: "今天金錢上要注意：",
+    romance: "今天跟別人相處：",
+    career: "今天工作上可以這樣做：",
+    health: "今天身體要注意：",
+  };
+  return `${prefixes[kind]}${message}`;
 }
 
 async function getDailyAstroJson(sign: string, apiKey: string) {
@@ -121,9 +143,14 @@ export async function GET(request: NextRequest) {
     failureStage = "translation";
     const translated: string[] = [];
     for (const text of [horoscope.general, horoscope.career, horoscope.finance, horoscope.health, horoscope.romance]) {
-      translated.push(await translateToTraditionalChinese(text));
+      translated.push(await translateToTraditionalChinese(removeAstrologyTerms(text)));
     }
-    const [general, career, finance, health, romance] = translated.map(makePlainChinese);
+    const [generalText, careerText, financeText, healthText, romanceText] = translated;
+    const general = makePlainChinese(generalText, "mood");
+    const career = makePlainChinese(careerText, "career");
+    const finance = makePlainChinese(financeText, "finance");
+    const health = makePlainChinese(healthText, "health");
+    const romance = makePlainChinese(romanceText, "romance");
     return NextResponse.json({
       date: result.date,
       sign: result.sign,
