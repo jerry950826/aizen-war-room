@@ -92,6 +92,10 @@ const userProfiles: Record<string, { english: string; name: string; department: 
   james: { english: "James", name: "簡侑俊", department: "技術部", title: "後端工程師" },
 };
 
+const memberAvatarFiles: Record<string, string> = {
+  Sean: "Bean",
+};
+
 const initialMembers: Member[] = [
   { email: "maggiefang@ai-zens.com", name: "Maggie 房美華", role: "管理員", active: true },
   { email: "ritahsieh@ai-zens.com", name: "Rita 謝雨如", role: "管理員", active: true },
@@ -266,6 +270,7 @@ export default function Home() {
     (person) => person.email === email || signedInMember?.name.startsWith(`${person.english} `),
   );
   const avatarEnglishName = signedInOrgPerson?.english ?? profile.english;
+  const avatarFileName = memberAvatarFiles[avatarEnglishName] ?? avatarEnglishName;
   const zodiac = zodiacFor(signedInOrgPerson?.birthday ?? null);
   const fortune = useMemo(() => {
     const dayKey = currentDay.key;
@@ -657,7 +662,7 @@ export default function Home() {
             <div className="avatar" aria-label={`${profile.name}的照片`}>
               <span aria-hidden="true">{profile.name[0]}</span>
               <img
-                src={`/members/${avatarEnglishName}.png`}
+                src={`/members/${avatarFileName}.png`}
                 alt=""
                 onError={(event) => { event.currentTarget.style.display = "none"; }}
               />

@@ -162,7 +162,8 @@ test("左下角依登入同仁顯示個人照片", async () => {
   ]);
 
   assert.match(page, /const avatarEnglishName = signedInOrgPerson\?\.english \?\? profile\.english/);
-  assert.match(page, /src=\{`\/members\/\$\{avatarEnglishName\}\.png`\}/);
+  assert.match(page, /Sean: "Bean"/);
+  assert.match(page, /src=\{`\/members\/\$\{avatarFileName\}\.png`\}/);
   assert.match(page, /onError=\{\(event\) => \{ event\.currentTarget\.style\.display = "none"; \}\}/);
   assert.match(styles, /\.avatar img \{[^}]*object-fit: cover/);
 });
