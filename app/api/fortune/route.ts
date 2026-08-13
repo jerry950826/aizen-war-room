@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
       scores: result.horoscopeScore,
       source: "astrojson-daily-cache-plain-zh-tw",
     }, {
-      headers: { "Cache-Control": "public, max-age=21600, s-maxage=21600" },
+      headers: { "Cache-Control": "public, max-age=90000, s-maxage=90000" },
     });
   } catch {
     return NextResponse.json({ error: "今日 API 運勢暫時無法取得", stage: failureStage }, { status: 503 });

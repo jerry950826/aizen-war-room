@@ -302,7 +302,7 @@ export default function Home() {
   useEffect(() => {
     if (!loggedIn || view !== "fortune") return;
     const controller = new AbortController();
-    fetch(`/api/fortune?sign=${zodiac.apiSign}`, { cache: "no-store", signal: controller.signal })
+    fetch(`/api/fortune?sign=${zodiac.apiSign}&format=plain-v2`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("API unavailable");
         return response.json() as Promise<ApiFortune>;
