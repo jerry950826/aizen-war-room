@@ -83,24 +83,13 @@ function makePlainChinese(text: string) {
   return sentences.slice(0, 2).join("").trim();
 }
 
-async function getDailyAstroJson(request: NextRequest, sign: string, apiKey: string) {
-  const cache = caches.default;
-  const cacheUrl = new URL("/api/fortune/daily-cache", request.url);
-  cacheUrl.searchParams.set("date", taipeiDayKey());
-  cacheUrl.searchParams.set("sign", sign);
-  const cacheKey = new Request(cacheUrl);
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached.json() as Promise<unknown>;
-
-  const response = await fetch(`${astroJsonBaseUrl}?sign=${encodeURIComponent(sign)}&lang=en&date=today&period=daily`, {
+async function getDailyAstroJson(sign: string, apiKey: string) {
+  const response = await fetch(`${astroJsonBaseUrl}?sign=${encodeURIComponent(sign)}&lang=en&date=${taipeiDayKey()}&period=daily`, {
     headers: { Accept: "application/json", "X-API-KEY": apiKey },
+    cf: { cacheTtl: 90000, cacheEverything: true },
   });
   if (!response.ok) throw new Error(`AstroJson returned ${response.status}`);
-  const result = await response.json();
-  await cache.put(cacheKey, Response.json(result, {
-    headers: { "Cache-Control": "public, max-age=90000" },
-  }));
-  return result;
+  return response.json();
 }
 
 export async function GET(request: NextRequest) {
@@ -113,7 +102,7 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = (env as { ASTROJSON_API_KEY?: string }).ASTROJSON_API_KEY;
     if (!apiKey) throw new Error("AstroJson API key is not configured");
-    const result = await getDailyAstroJson(request, sign, apiKey) as {
+    const result = await getDailyAstroJson(sign, apiKey) as {
       date?: string;
       sign?: string;
       color?: string;

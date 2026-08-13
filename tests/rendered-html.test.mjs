@@ -168,11 +168,8 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(route, /aspects: \{ career, finance, health, romance \}/);
   assert.match(route, /translate\.googleapis\.com\/translate_a\/single/);
   assert.match(route, /"tl", "zh-TW"/);
-  assert.match(route, /const cache = caches\.default/);
-  assert.match(route, /new URL\("\/api\/fortune\/daily-cache", request\.url\)/);
-  assert.match(route, /cacheUrl\.searchParams\.set\("date", taipeiDayKey\(\)\)/);
-  assert.match(route, /await cache\.match\(cacheKey\)/);
-  assert.match(route, /await cache\.put\(cacheKey/);
+  assert.match(route, /date=\$\{taipeiDayKey\(\)\}/);
+  assert.match(route, /cacheTtl: 90000, cacheEverything: true/);
   assert.match(route, /translated\.map\(makePlainChinese\)/);
   assert.match(route, /translated\.push\(await translateToTraditionalChinese\(text\)\)/);
   assert.match(route, /chineseCharacters < 12/);
