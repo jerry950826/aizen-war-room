@@ -700,63 +700,15 @@ export default function Home() {
               <div><p className="kicker">DAILY FORTUNE</p><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
               <span className="fortune-disclaimer">{fortune.basis}</span>
             </div>
-            <section className="fortune-hero">
-              <div className="fortune-score"><span>今日整體運勢</span><div className="fortune-score-value"><strong>{fortune.overall}</strong><small>/ 100</small></div></div>
+            <section className="fortune-hero fortune-api-hero">
               <div className="fortune-summary">
-                <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・今日關鍵字：{fortune.keyword}</small></span></div>
-                <span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{apiHoroscope || fortune.summary}</p>
+                <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・{fortune.date}</small></span></div>
+                <span>DAILY HOROSCOPE</span><h2>{zodiac.name}今日運勢</h2><p>{apiHoroscope || fortune.summary}</p>
                 <small className={`fortune-source ${horoscopeStatus}`}>
                   {horoscopeStatus === "api" ? "每日運勢 API・繁體中文" : horoscopeStatus === "fallback" ? "內建運勢・API 暫時無法使用" : "正在讀取今日星象…"}
                 </small>
               </div>
               <div className="fortune-orbit"><i /><b>{zodiac.icon}</b><span>{zodiac.name}</span></div>
-            </section>
-            <section className="fortune-chips" aria-label="今日能量提示">
-              <div><span>✓ 今日宜</span><strong>{fortune.goodFor}</strong></div>
-              <div><span>☕ 能量補給</span><strong>{fortune.recharge}</strong></div>
-              <div><span>⌁ 社交暗號</span><strong>{fortune.socialCode}</strong></div>
-            </section>
-            <section className="fortune-metrics">
-              {[
-                ["工作運", fortune.work, "先完成最重要的一步"],
-                ["人際運", fortune.people, "清楚表達也記得傾聽"],
-                ["財務運", fortune.finance, "支出與數字多確認一次"],
-              ].map(([label, score, note]) => (
-                <article key={String(label)}>
-                  <div><span>{label}</span><strong>{score}</strong></div>
-                  <div className="fortune-bar"><i style={{ width: `${score}%` }} /></div>
-                  <p>{note}</p>
-                </article>
-              ))}
-            </section>
-            <section className="fortune-guidance">
-              <article className="attention-card">
-                <span>今天該注意什麼</span>
-                <h2>{fortune.advice}</h2>
-                <p>{fortune.focus}</p>
-              </article>
-              <article className="lucky-card">
-                <span>今日幸運提示</span>
-                <dl>
-                  <div><dt>幸運色</dt><dd>{fortune.color}</dd></div>
-                  <div><dt>幸運數字</dt><dd>{fortune.number}</dd></div>
-                  <div><dt>順勢時段</dt><dd>{fortune.bestTime}</dd></div>
-                </dl>
-              </article>
-            </section>
-            <section className="cosmic-grid">
-              <article className="mission-card">
-                <div className="cosmic-icon">✓</div>
-                <div><span>TODAY&apos;S QUEST</span><h2>今日小任務</h2><p>{fortune.mission}</p></div>
-              </article>
-              <article className="warning-card">
-                <div className="cosmic-icon">!</div>
-                <div><span>COSMIC RADAR</span><h2>今日避雷</h2><p>{fortune.avoid}</p></div>
-              </article>
-              <article className="whisper-card">
-                <span>✦ 宇宙悄悄話</span>
-                <blockquote>「{fortune.message}」</blockquote>
-              </article>
             </section>
             <section className="tarot-section">
               <div className="tarot-heading">

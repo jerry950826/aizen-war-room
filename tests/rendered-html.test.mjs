@@ -62,13 +62,14 @@ test("修正既有 Pearl、Gary 與 Sharlene 顯示名稱", async () => {
   assert.match(database, /UPDATE members SET name=\? WHERE email=\? AND name=\?/);
 });
 
-test("今日運勢依帳號與日期固定並提供注意事項", async () => {
+test("今日運勢依生日星座與日期取得 API 內容", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
   assert.match(page, /type View = "dashboard" \| "fortune"/);
   assert.match(page, /dailySeed\(`\$\{fortuneIdentity\}:\$\{dayKey\}`\)/);
   assert.match(page, />今日運勢</);
-  assert.match(page, /今天該注意什麼/);
+  assert.match(page, /DAILY HOROSCOPE/);
+  assert.match(page, /每日運勢 API・繁體中文/);
   assert.match(page, /生日運勢・輕鬆參考/);
 });
 
@@ -92,19 +93,18 @@ test("組織聯絡資訊顯示生日且未提供者標示收集中", async () =>
   assert.match(page, /signedInOrgPerson\?\.birthday \?\? email/);
 });
 
-test("生日可判斷星座並顯示趣味運勢內容", async () => {
+test("生日可判斷星座並顯示 API 當日運勢", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
   assert.match(page, /function zodiacFor\(birthday: string \| null\)/);
   assert.match(page, /name: "雙子座", apiSign: "gemini", icon: "♊"/);
   assert.match(page, /name: "獅子座", apiSign: "leo", icon: "♌"/);
-  assert.match(page, /今日小任務/);
-  assert.match(page, /今日避雷/);
-  assert.match(page, /宇宙悄悄話/);
-  assert.match(page, /今日關鍵字/);
-  assert.match(page, /今日宜/);
-  assert.match(page, /能量補給/);
-  assert.match(page, /社交暗號/);
+  assert.match(page, /DAILY HOROSCOPE/);
+  assert.match(page, /\{zodiac\.name\}今日運勢/);
+  assert.match(page, /apiHoroscope \|\| fortune\.summary/);
+  assert.doesNotMatch(page, /className="fortune-score-value"/);
+  assert.doesNotMatch(page, /className="fortune-metrics"/);
+  assert.doesNotMatch(page, /className="fortune-chips"/);
 });
 
 test("Joanne 生日為六月二十七日並會套用巨蟹座運勢", async () => {
@@ -232,15 +232,15 @@ test("頁面權限名稱沿用允許登入名單資料", async () => {
   assert.match(page, /await loadSharedState\(token\)/);
 });
 
-test("今日運勢使用對齊的等高卡片與響應式欄位", async () => {
+test("今日運勢以 API 長文為主並支援響應式版面", async () => {
   const [page, styles] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /className="fortune-score-value"/);
-  assert.match(styles, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\) minmax\(0, 1\.35fr\)/);
-  assert.match(styles, /\.fortune-metrics article \{ min-height: 132px; display: grid/);
+  assert.match(page, /className="fortune-hero fortune-api-hero"/);
+  assert.match(styles, /\.fortune-api-hero \{ min-height: 330px; grid-template-columns: minmax\(0, 1fr\) 190px/);
+  assert.match(styles, /\.fortune-api-hero \.fortune-summary p \{ max-width: 760px; font-size: 16px; line-height: 2/);
   assert.match(styles, /\.fortune-page \.page-heading \{ align-items: flex-start; flex-direction: column/);
 });
 
