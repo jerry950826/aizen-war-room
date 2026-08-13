@@ -80,13 +80,11 @@ export async function GET(request: NextRequest) {
     if (!horoscope?.general || !horoscope.career || !horoscope.finance || !horoscope.health || !horoscope.romance) {
       throw new Error("AstroJson returned an incomplete response");
     }
-    const [general, career, finance, health, romance] = await Promise.all([
-      translateToTraditionalChinese(horoscope.general),
-      translateToTraditionalChinese(horoscope.career),
-      translateToTraditionalChinese(horoscope.finance),
-      translateToTraditionalChinese(horoscope.health),
-      translateToTraditionalChinese(horoscope.romance),
-    ]);
+    const translated: string[] = [];
+    for (const text of [horoscope.general, horoscope.career, horoscope.finance, horoscope.health, horoscope.romance]) {
+      translated.push(await translateToTraditionalChinese(text));
+    }
+    const [general, career, finance, health, romance] = translated;
     return NextResponse.json({
       date: result.date,
       sign: result.sign,
@@ -95,7 +93,7 @@ export async function GET(request: NextRequest) {
       scores: result.horoscopeScore,
       source: "astrojson-translated",
     }, {
-      headers: { "Cache-Control": "private, no-store" },
+      headers: { "Cache-Control": "public, max-age=21600, s-maxage=21600" },
     });
   } catch {
     return NextResponse.json({ error: "今日 API 運勢暫時無法取得" }, { status: 503 });
