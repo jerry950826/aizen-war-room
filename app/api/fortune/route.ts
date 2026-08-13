@@ -50,6 +50,56 @@ async function translateToTraditionalChinese(text: string) {
   return translatedText;
 }
 
+function taipeiDayKey() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function makePlainChinese(text: string) {
+  const replacements: Array<[RegExp, string]> = [
+    [/財務狀況/g, "手頭上的錢"],
+    [/財務/g, "金錢"],
+    [/職業生涯/g, "工作"],
+    [/職場環境/g, "工作場合"],
+    [/人際關係/g, "跟別人的相處"],
+    [/溝通交流/g, "好好說話"],
+    [/情緒波動/g, "心情起伏"],
+    [/潛在的/g, "可能的"],
+    [/機遇/g, "好機會"],
+    [/挑戰/g, "難題"],
+    [/審慎/g, "多想一下"],
+    [/謹慎/g, "小心一點"],
+    [/宜採取/g, "可以試著"],
+    [/有助於/g, "能幫你"],
+    [/著重於/g, "先把重點放在"],
+  ];
+  let plain = text.replace(/\s+/g, "").replace(/；/g, "，");
+  for (const [pattern, replacement] of replacements) plain = plain.replace(pattern, replacement);
+  const sentences = plain.match(/[^。！？]+[。！？]?/g) ?? [plain];
+  return sentences.slice(0, 2).join("").trim();
+}
+
+async function getDailyAstroJson(sign: string, apiKey: string) {
+  const cache = caches.default;
+  const cacheKey = new Request(`https://daily-fortune.invalid/${taipeiDayKey()}/${sign}`);
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached.json() as Promise<unknown>;
+
+  const response = await fetch(`${astroJsonBaseUrl}?sign=${encodeURIComponent(sign)}&lang=en&date=today&period=daily`, {
+    headers: { Accept: "application/json", "X-API-KEY": apiKey },
+  });
+  if (!response.ok) throw new Error(`AstroJson returned ${response.status}`);
+  const result = await response.json();
+  await cache.put(cacheKey, Response.json(result, {
+    headers: { "Cache-Control": "public, max-age=90000" },
+  }));
+  return result;
+}
+
 export async function GET(request: NextRequest) {
   const sign = request.nextUrl.searchParams.get("sign")?.toLowerCase() ?? "";
   if (!zodiacSigns.has(sign)) {
@@ -60,12 +110,7 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = (env as { ASTROJSON_API_KEY?: string }).ASTROJSON_API_KEY;
     if (!apiKey) throw new Error("AstroJson API key is not configured");
-    const response = await fetch(`${astroJsonBaseUrl}?sign=${encodeURIComponent(sign)}&lang=en&date=today&period=daily`, {
-      headers: { Accept: "application/json", "X-API-KEY": apiKey },
-      cf: { cacheTtl: 21600, cacheEverything: true },
-    });
-    if (!response.ok) throw new Error(`AstroJson returned ${response.status}`);
-    const result = await response.json() as {
+    const result = await getDailyAstroJson(sign, apiKey) as {
       date?: string;
       sign?: string;
       color?: string;
@@ -86,14 +131,14 @@ export async function GET(request: NextRequest) {
     for (const text of [horoscope.general, horoscope.career, horoscope.finance, horoscope.health, horoscope.romance]) {
       translated.push(await translateToTraditionalChinese(text));
     }
-    const [general, career, finance, health, romance] = translated;
+    const [general, career, finance, health, romance] = translated.map(makePlainChinese);
     return NextResponse.json({
       date: result.date,
       sign: result.sign,
       horoscope: general,
       aspects: { career, finance, health, romance },
       scores: result.horoscopeScore,
-      source: "astrojson-translated",
+      source: "astrojson-daily-cache-plain-zh-tw",
     }, {
       headers: { "Cache-Control": "public, max-age=21600, s-maxage=21600" },
     });
