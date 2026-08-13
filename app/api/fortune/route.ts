@@ -83,9 +83,12 @@ function makePlainChinese(text: string) {
   return sentences.slice(0, 2).join("").trim();
 }
 
-async function getDailyAstroJson(sign: string, apiKey: string) {
+async function getDailyAstroJson(request: NextRequest, sign: string, apiKey: string) {
   const cache = caches.default;
-  const cacheKey = new Request(`https://daily-fortune.invalid/${taipeiDayKey()}/${sign}`);
+  const cacheUrl = new URL("/api/fortune/daily-cache", request.url);
+  cacheUrl.searchParams.set("date", taipeiDayKey());
+  cacheUrl.searchParams.set("sign", sign);
+  const cacheKey = new Request(cacheUrl);
   const cached = await cache.match(cacheKey);
   if (cached) return cached.json() as Promise<unknown>;
 
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest) {
   try {
     const apiKey = (env as { ASTROJSON_API_KEY?: string }).ASTROJSON_API_KEY;
     if (!apiKey) throw new Error("AstroJson API key is not configured");
-    const result = await getDailyAstroJson(sign, apiKey) as {
+    const result = await getDailyAstroJson(request, sign, apiKey) as {
       date?: string;
       sign?: string;
       color?: string;
