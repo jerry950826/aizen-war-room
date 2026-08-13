@@ -96,8 +96,8 @@ test("生日可判斷星座並顯示趣味運勢內容", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
   assert.match(page, /function zodiacFor\(birthday: string \| null\)/);
-  assert.match(page, /name: "雙子座", icon: "♊"/);
-  assert.match(page, /name: "獅子座", icon: "♌"/);
+  assert.match(page, /name: "雙子座", apiSign: "gemini", icon: "♊"/);
+  assert.match(page, /name: "獅子座", apiSign: "leo", icon: "♌"/);
   assert.match(page, /今日小任務/);
   assert.match(page, /今日避雷/);
   assert.match(page, /宇宙悄悄話/);
@@ -111,7 +111,7 @@ test("Joanne 生日為六月二十七日並會套用巨蟹座運勢", async () =
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
   assert.match(page, /email: "joannechen@ai-zens\.com", birthday: "06-27"/);
-  assert.match(page, /name: "巨蟹座", icon: "♋"/);
+  assert.match(page, /name: "巨蟹座", apiSign: "cancer", icon: "♋"/);
 });
 
 test("登入欄位使用一致圖示並覆蓋瀏覽器自動填入底色", async () => {
@@ -153,6 +153,36 @@ test("登入憑證保存一天並可在重新整理後恢復", async () => {
   assert.match(loginRoute, /24 \* 60 \* 60 \* 1000/);
   assert.match(sessionRoute, /proxyControlApi\(request, "\/session"\)/);
   assert.match(page, /fetch\("\/api\/war-room-session", \{ cache: "no-store" \}\)/);
+});
+
+test("今日運勢串接免費 API 並在失敗時保留內建內容", async () => {
+  const [page, route] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/fortune/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(route, /https:\/\/freehoroscopeapi\.com\/api\/v1/);
+  assert.match(route, /get-horoscope\/daily\?sign=/);
+  assert.match(route, /Cache-Control/);
+  assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}`/);
+  assert.match(page, /apiHoroscope \|\| fortune\.summary/);
+  assert.match(page, /內建運勢・API 暫時無法使用/);
+});
+
+test("塔羅牌提供五張牌選擇、翻牌與正逆位解讀", async () => {
+  const [page, styles, route] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/fortune/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /\[0, 1, 2, 3, 4\]\.map/);
+  assert.match(page, /選一張今天最有感覺的牌/);
+  assert.match(page, /drawTarot\(slot\)/);
+  assert.match(route, /\/tarot\/cards/);
+  assert.match(route, /orientation: reversed \? "reversed" : "upright"/);
+  assert.match(styles, /\.tarot-choice\.chosen \.tarot-card-inner \{ transform: rotateY\(180deg\)/);
+  assert.match(styles, /@keyframes tarot-reveal/);
 });
 
 test("重新整理後忽略空白 Bearer 並沿用一日登入 Cookie", async () => {

@@ -132,6 +132,8 @@ button { color: inherit; }
 .fortune-summary > span { color: #9ed3fb; font-size: 9px; font-weight: 800; letter-spacing: .18em; }
 .fortune-summary h2 { margin: 11px 0 12px; font-size: 32px; }
 .fortune-summary p { max-width: 470px; margin: 0; color: #dceefa; font-size: 13px; line-height: 1.8; }
+.fortune-source { display: inline-flex; margin-top: 15px; padding: 5px 9px; border: 1px solid rgba(255,255,255,.18); border-radius: 20px; color: #b9ddf8; font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.fortune-source.api { color: #d8ffde; border-color: rgba(159,255,178,.28); background: rgba(45,145,77,.16); }
 .fortune-orbit { position: relative; width: 160px; height: 160px; align-self: center; justify-self: end; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.22); border-radius: 50%; }
 .fortune-orbit::before, .fortune-orbit::after { content: ""; position: absolute; border: 1px solid rgba(255,255,255,.11); border-radius: 50%; }
 .fortune-orbit::before { inset: 20px; }
@@ -164,6 +166,40 @@ button { color: inherit; }
 .lucky-card dl div { padding: 12px 10px; border-radius: 9px; background: #f5f8fb; }
 .lucky-card dt { color: #8b95a4; font-size: 8px; }
 .lucky-card dd { margin: 5px 0 0; font-size: 11px; font-weight: 800; }
+.tarot-section { margin-top: 20px; padding: 32px; overflow: hidden; border-radius: 20px; color: white; background: radial-gradient(circle at 50% -20%, rgba(146,115,255,.42), transparent 45%), linear-gradient(145deg, #15113b, #281b55 55%, #10244a); box-shadow: 0 18px 42px rgba(22,17,62,.2); }
+.tarot-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.tarot-heading span { color: #cbbcff; font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.tarot-heading h2 { margin: 7px 0; font-size: 24px; }
+.tarot-heading p { max-width: 620px; margin: 0; color: #c9c7df; font-size: 11px; line-height: 1.7; }
+.tarot-heading button { padding: 9px 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 20px; color: white; background: rgba(255,255,255,.08); cursor: pointer; }
+.tarot-deck { min-height: 230px; margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 24px); perspective: 1000px; }
+.tarot-choice { width: clamp(96px, 13vw, 138px); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 13px; background: transparent; cursor: pointer; perspective: 900px; transition: transform .25s ease, opacity .25s ease; }
+.tarot-choice:nth-child(1), .tarot-choice:nth-child(5) { transform: translateY(15px) rotate(-3deg); }
+.tarot-choice:nth-child(5) { transform: translateY(15px) rotate(3deg); }
+.tarot-choice:nth-child(2) { transform: translateY(4px) rotate(-1deg); }
+.tarot-choice:nth-child(4) { transform: translateY(4px) rotate(1deg); }
+.tarot-choice:not(:disabled):hover { transform: translateY(-13px) scale(1.04); }
+.tarot-card-inner { position: relative; width: 100%; height: 100%; display: block; transform-style: preserve-3d; transition: transform .75s cubic-bezier(.2,.7,.2,1); }
+.tarot-choice.chosen .tarot-card-inner { transform: rotateY(180deg); }
+.tarot-card-back, .tarot-card-front { position: absolute; inset: 0; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; backface-visibility: hidden; border: 2px solid #c8a969; border-radius: 13px; box-shadow: 0 12px 25px rgba(0,0,0,.28); }
+.tarot-card-back { background: repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 8px, transparent 8px 16px), #171645; }
+.tarot-card-back::before { content: ""; position: absolute; inset: 8px; border: 1px solid rgba(221,191,118,.55); border-radius: 8px; }
+.tarot-card-back i { font-size: 38px; color: #f0d487; font-style: normal; text-shadow: 0 0 20px rgba(240,212,135,.6); }
+.tarot-card-back b { margin-top: 8px; color: #faf3dc; font-size: 16px; }
+.tarot-card-back small { margin-top: 5px; color: #9e96c7; font-size: 6px; letter-spacing: .16em; }
+.tarot-card-front { transform: rotateY(180deg); background: radial-gradient(circle at 50% 30%, #fff5cc, #e6c570 58%, #8a5f24); color: #251b3c; text-align: center; }
+.tarot-card-front i { font-size: 32px; font-style: normal; }
+.tarot-card-front b { margin-top: 12px; font-family: Georgia, serif; font-size: 14px; }
+.tarot-card-front small { margin-top: 7px; font-size: 9px; font-weight: 900; }
+.tarot-deck.has-result .tarot-choice:not(.chosen) { opacity: .2; transform: scale(.9); }
+.tarot-loading { margin: 4px 0 0; color: #d7caff; text-align: center; font-size: 11px; }
+.tarot-reading { margin: 26px auto 0; max-width: 760px; padding: 24px 28px; display: grid; grid-template-columns: minmax(180px,.7fr) 1.3fr; gap: 8px 28px; border: 1px solid rgba(225,199,132,.32); border-radius: 14px; background: rgba(255,255,255,.08); animation: tarot-reveal .45s ease both; }
+.tarot-reading span { color: #d8c280; font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.tarot-reading h3 { margin: 7px 0 0; font-family: Georgia, serif; font-size: 20px; }
+.tarot-reading p { margin: 0; color: #d2d0e0; font-size: 11px; line-height: 1.7; }
+.tarot-reading .tarot-meaning { color: white; font-size: 13px; font-weight: 700; }
+.tarot-reading small { grid-column: 1 / -1; margin-top: 8px; color: #9290ab; font-size: 8px; }
+@keyframes tarot-reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .cosmic-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.35fr); gap: 16px; align-items: stretch; }
 .cosmic-grid article { min-width: 0; min-height: 160px; padding: 22px; border-radius: 14px; border: 1px solid var(--line); background: white; box-shadow: 0 8px 24px rgba(28,35,67,.035); }
 .mission-card, .warning-card { display: flex; gap: 14px; align-items: flex-start; }
@@ -353,6 +389,16 @@ button { color: inherit; }
   .lucky-card dl { grid-template-columns: 1fr; }
   .cosmic-grid { grid-template-columns: 1fr; }
   .whisper-card { grid-column: auto; }
+  .tarot-section { padding: 25px 18px; }
+  .tarot-heading { display: block; }
+  .tarot-heading button { margin-top: 15px; }
+  .tarot-deck { min-height: 170px; gap: 5px; }
+  .tarot-choice { width: min(18vw, 76px); min-width: 52px; }
+  .tarot-card-back { padding: 5px; }
+  .tarot-card-back i { font-size: 24px; }
+  .tarot-card-back b { font-size: 11px; }
+  .tarot-card-back small { display: none; }
+  .tarot-reading { grid-template-columns: 1fr; padding: 21px; }
   .settings-card { display: block; padding: 24px; }
   .settings-icon { margin-bottom: 18px; }
   .account-link-panel { display: flex; flex-direction: column; align-items: stretch; }

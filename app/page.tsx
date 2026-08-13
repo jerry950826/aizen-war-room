@@ -6,6 +6,7 @@ type View = "dashboard" | "fortune" | "password" | "permissions" | "people";
 type ServiceId = "leave" | "claims" | "instructors";
 type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
 type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string; birthday: string | null };
+type TarotResult = { name: string; code: string; arcana: string; orientation: "upright" | "reversed"; meaning: string; description: string };
 
 type Service = {
   id: ServiceId;
@@ -152,27 +153,27 @@ const dailyMissions = [
 ];
 
 const zodiacSigns = [
-  { name: "摩羯座", icon: "♑", from: 1222, to: 119, element: "土象" },
-  { name: "水瓶座", icon: "♒", from: 120, to: 218, element: "風象" },
-  { name: "雙魚座", icon: "♓", from: 219, to: 320, element: "水象" },
-  { name: "牡羊座", icon: "♈", from: 321, to: 419, element: "火象" },
-  { name: "金牛座", icon: "♉", from: 420, to: 520, element: "土象" },
-  { name: "雙子座", icon: "♊", from: 521, to: 621, element: "風象" },
-  { name: "巨蟹座", icon: "♋", from: 622, to: 722, element: "水象" },
-  { name: "獅子座", icon: "♌", from: 723, to: 822, element: "火象" },
-  { name: "處女座", icon: "♍", from: 823, to: 922, element: "土象" },
-  { name: "天秤座", icon: "♎", from: 923, to: 1023, element: "風象" },
-  { name: "天蠍座", icon: "♏", from: 1024, to: 1122, element: "水象" },
-  { name: "射手座", icon: "♐", from: 1123, to: 1221, element: "火象" },
+  { name: "摩羯座", apiSign: "capricorn", icon: "♑", from: 1222, to: 119, element: "土象" },
+  { name: "水瓶座", apiSign: "aquarius", icon: "♒", from: 120, to: 218, element: "風象" },
+  { name: "雙魚座", apiSign: "pisces", icon: "♓", from: 219, to: 320, element: "水象" },
+  { name: "牡羊座", apiSign: "aries", icon: "♈", from: 321, to: 419, element: "火象" },
+  { name: "金牛座", apiSign: "taurus", icon: "♉", from: 420, to: 520, element: "土象" },
+  { name: "雙子座", apiSign: "gemini", icon: "♊", from: 521, to: 621, element: "風象" },
+  { name: "巨蟹座", apiSign: "cancer", icon: "♋", from: 622, to: 722, element: "水象" },
+  { name: "獅子座", apiSign: "leo", icon: "♌", from: 723, to: 822, element: "火象" },
+  { name: "處女座", apiSign: "virgo", icon: "♍", from: 823, to: 922, element: "土象" },
+  { name: "天秤座", apiSign: "libra", icon: "♎", from: 923, to: 1023, element: "風象" },
+  { name: "天蠍座", apiSign: "scorpio", icon: "♏", from: 1024, to: 1122, element: "水象" },
+  { name: "射手座", apiSign: "sagittarius", icon: "♐", from: 1123, to: 1221, element: "火象" },
 ];
 
 function zodiacFor(birthday: string | null) {
-  if (!birthday) return { name: "神秘星座", icon: "✦", element: "等待解鎖" };
+  if (!birthday) return { name: "神秘星座", apiSign: "gemini", icon: "✦", element: "等待解鎖" };
   const [month, day] = birthday.split("-").map(Number);
   const value = month * 100 + day;
   return zodiacSigns.find((sign) =>
     sign.from > sign.to ? value >= sign.from || value <= sign.to : value >= sign.from && value <= sign.to,
-  ) ?? { name: "神秘星座", icon: "✦", element: "等待解鎖" };
+  ) ?? { name: "神秘星座", apiSign: "gemini", icon: "✦", element: "等待解鎖" };
 }
 
 function dailySeed(value: string) {
@@ -237,9 +238,14 @@ export default function Home() {
   const [saved, setSaved] = useState("");
   const [permissionBusy, setPermissionBusy] = useState(false);
   const [toast, setToast] = useState("");
+  const [apiHoroscope, setApiHoroscope] = useState("");
+  const [horoscopeStatus, setHoroscopeStatus] = useState<"idle" | "loading" | "api" | "fallback">("idle");
+  const [selectedTarotSlot, setSelectedTarotSlot] = useState<number | null>(null);
+  const [tarotResult, setTarotResult] = useState<TarotResult | null>(null);
+  const [tarotBusy, setTarotBusy] = useState(false);
   const visibleServices = useMemo(
     () => services.filter((service) => permissions[user]?.[service.id] ?? true),
-    [permissions, user],
+    [permissions, services, user],
   );
   const profileName = user || "使用者";
   const profile = userProfiles[user] ?? {
@@ -281,6 +287,53 @@ export default function Home() {
       socialCode: ["先聽再說", "直接但溫柔", "多問一句", "記得回覆", "保持幽默", "給彼此空間"][(seed >>> 21) % 6],
     };
   }, [email, currentDay.key, currentDay.fortune, signedInOrgPerson?.birthday]);
+
+  useEffect(() => {
+    if (!loggedIn || view !== "fortune") return;
+    const controller = new AbortController();
+    fetch(`/api/fortune?sign=${zodiac.apiSign}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("API unavailable");
+        return response.json() as Promise<{ horoscope?: string }>;
+      })
+      .then((result) => {
+        if (!result.horoscope) throw new Error("Missing horoscope");
+        setApiHoroscope(result.horoscope);
+        setHoroscopeStatus("api");
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setApiHoroscope("");
+        setHoroscopeStatus("fallback");
+      });
+    return () => controller.abort();
+  }, [loggedIn, view, zodiac.apiSign, currentDay.key]);
+
+  const drawTarot = async (slot: number) => {
+    if (tarotBusy || tarotResult) return;
+    setSelectedTarotSlot(slot);
+    setTarotBusy(true);
+    try {
+      const response = await fetch("/api/fortune", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slot }),
+      });
+      const result = await response.json() as { card?: TarotResult; error?: string };
+      if (!response.ok || !result.card) throw new Error(result.error || "抽牌失敗");
+      setTarotResult(result.card);
+    } catch {
+      setSelectedTarotSlot(null);
+      notify("塔羅牌暫時連線失敗，請稍後再試。");
+    } finally {
+      setTarotBusy(false);
+    }
+  };
+
+  const resetTarot = () => {
+    setSelectedTarotSlot(null);
+    setTarotResult(null);
+  };
 
   const changePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -651,7 +704,10 @@ export default function Home() {
               <div className="fortune-score"><span>今日整體運勢</span><div className="fortune-score-value"><strong>{fortune.overall}</strong><small>/ 100</small></div></div>
               <div className="fortune-summary">
                 <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・今日關鍵字：{fortune.keyword}</small></span></div>
-                <span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{fortune.summary}</p>
+                <span>TODAY&apos;S THEME</span><h2>{fortune.title}</h2><p>{apiHoroscope || fortune.summary}</p>
+                <small className={`fortune-source ${horoscopeStatus}`}>
+                  {horoscopeStatus === "api" ? "FREE HOROSCOPE API・今日更新" : horoscopeStatus === "fallback" ? "內建運勢・API 暫時無法使用" : "正在讀取今日星象…"}
+                </small>
               </div>
               <div className="fortune-orbit"><i /><b>{zodiac.icon}</b><span>{zodiac.name}</span></div>
             </section>
@@ -701,6 +757,41 @@ export default function Home() {
                 <span>✦ 宇宙悄悄話</span>
                 <blockquote>「{fortune.message}」</blockquote>
               </article>
+            </section>
+            <section className="tarot-section">
+              <div className="tarot-heading">
+                <div><span>DAILY TAROT</span><h2>選一張今天最有感覺的牌</h2><p>先放慢一下，憑第一直覺選擇。每次進入可抽一張，翻牌後再看今日提醒。</p></div>
+                {tarotResult && <button type="button" onClick={resetTarot}>重新洗牌</button>}
+              </div>
+              <div className={`tarot-deck ${tarotResult ? "has-result" : ""}`} aria-label="五張塔羅牌，請選擇一張">
+                {[0, 1, 2, 3, 4].map((slot) => {
+                  const chosen = selectedTarotSlot === slot;
+                  return (
+                    <button
+                      type="button"
+                      className={`tarot-choice ${chosen ? "chosen" : ""}`}
+                      key={slot}
+                      onClick={() => drawTarot(slot)}
+                      disabled={tarotBusy || Boolean(tarotResult)}
+                      aria-label={`選擇第 ${slot + 1} 張塔羅牌`}
+                    >
+                      <span className="tarot-card-inner">
+                        <span className="tarot-card-back"><i>✦</i><b>{slot + 1}</b><small>CHOOSE ME</small></span>
+                        <span className="tarot-card-front"><i>{tarotResult?.orientation === "reversed" ? "☾" : "☀"}</i><b>{tarotResult?.name}</b><small>{tarotResult?.orientation === "reversed" ? "逆位" : "正位"}</small></span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {tarotBusy && <p className="tarot-loading">正在為你翻開這張牌…</p>}
+              {tarotResult && (
+                <article className="tarot-reading">
+                  <div><span>{tarotResult.arcana === "major" ? "大阿爾克那" : "小阿爾克那"}</span><h3>{tarotResult.name}・{tarotResult.orientation === "reversed" ? "逆位" : "正位"}</h3></div>
+                  <p className="tarot-meaning">{tarotResult.meaning}</p>
+                  <p>{tarotResult.description}</p>
+                  <small>牌義資料來自 Free Horoscope &amp; Tarot API；內容僅供日常靈感參考。</small>
+                </article>
+              )}
             </section>
           </div>
         )}
