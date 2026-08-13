@@ -7,6 +7,11 @@ type ServiceId = "leave" | "claims" | "instructors";
 type Member = { email: string; name: string; role: "管理員" | "一般成員"; active: boolean };
 type OrgPerson = { id: string; department: string; level: 1 | 2 | 3; title: string; english: string; name: string; phone: string; email: string; birthday: string | null };
 type TarotResult = { name: string; code: string; arcana: string; orientation: "upright" | "reversed"; meaning: string; description: string };
+type ApiFortune = {
+  horoscope: string;
+  aspects: { finance: string; romance: string; career: string; health: string };
+  scores?: { finance?: number; romance?: number; career?: number; health?: number };
+};
 
 type Service = {
   id: ServiceId;
@@ -238,7 +243,7 @@ export default function Home() {
   const [saved, setSaved] = useState("");
   const [permissionBusy, setPermissionBusy] = useState(false);
   const [toast, setToast] = useState("");
-  const [apiHoroscope, setApiHoroscope] = useState("");
+  const [apiFortune, setApiFortune] = useState<ApiFortune | null>(null);
   const [horoscopeStatus, setHoroscopeStatus] = useState<"idle" | "loading" | "api" | "fallback">("idle");
   const [selectedTarotSlot, setSelectedTarotSlot] = useState<number | null>(null);
   const [tarotResult, setTarotResult] = useState<TarotResult | null>(null);
@@ -287,15 +292,12 @@ export default function Home() {
       socialCode: ["先聽再說", "直接但溫柔", "多問一句", "記得回覆", "保持幽默", "給彼此空間"][(seed >>> 21) % 6],
     };
   }, [email, currentDay.key, currentDay.fortune, signedInOrgPerson?.birthday]);
-  const fortuneInsights = useMemo(() => {
-    const content = apiHoroscope || fortune.summary;
-    const sentences = content.split(/(?<=[。！？])/).map((sentence) => sentence.trim()).filter(Boolean);
-    return [
-      { label: "今日重點", icon: "✦", text: sentences[0] || content },
-      { label: "行動方向", icon: "→", text: sentences[1] || sentences[0] || content },
-      { label: "給自己的提醒", icon: "☼", text: sentences.slice(2).join("") || sentences.at(-1) || content },
-    ];
-  }, [apiHoroscope, fortune.summary]);
+  const fortuneAspects = apiFortune ? [
+    { key: "finance", label: "財運", icon: "$", text: apiFortune.aspects.finance, score: apiFortune.scores?.finance },
+    { key: "romance", label: "愛情人際", icon: "♡", text: apiFortune.aspects.romance, score: apiFortune.scores?.romance },
+    { key: "career", label: "事業工作", icon: "↗", text: apiFortune.aspects.career, score: apiFortune.scores?.career },
+    { key: "health", label: "健康狀態", icon: "+", text: apiFortune.aspects.health, score: apiFortune.scores?.health },
+  ] : [];
 
   useEffect(() => {
     if (!loggedIn || view !== "fortune") return;
@@ -303,16 +305,16 @@ export default function Home() {
     fetch(`/api/fortune?sign=${zodiac.apiSign}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("API unavailable");
-        return response.json() as Promise<{ horoscope?: string }>;
+        return response.json() as Promise<ApiFortune>;
       })
       .then((result) => {
-        if (!result.horoscope) throw new Error("Missing horoscope");
-        setApiHoroscope(result.horoscope);
+        if (!result.horoscope || !result.aspects) throw new Error("Missing horoscope");
+        setApiFortune(result);
         setHoroscopeStatus("api");
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-        setApiHoroscope("");
+        setApiFortune(null);
         setHoroscopeStatus("fallback");
       });
     return () => controller.abort();
@@ -712,21 +714,21 @@ export default function Home() {
             <section className="fortune-hero fortune-api-hero">
               <div className="fortune-summary">
                 <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・{fortune.date}</small></span></div>
-                <span>DAILY HOROSCOPE</span><h2>{zodiac.name}今日運勢</h2><p>{apiHoroscope || fortune.summary}</p>
+                <span>DAILY HOROSCOPE</span><h2>{zodiac.name}今日運勢</h2><p>{apiFortune?.horoscope || "今日 API 運勢暫時無法取得，請稍後再試。"}</p>
                 <small className={`fortune-source ${horoscopeStatus}`}>
-                  {horoscopeStatus === "api" ? "每日運勢 API・繁體中文" : horoscopeStatus === "fallback" ? "內建運勢・API 暫時無法使用" : "正在讀取今日星象…"}
+                  {horoscopeStatus === "api" ? "AstroJson 每日運勢・繁體中文" : horoscopeStatus === "fallback" ? "API 暫時無法使用" : "正在讀取今日星象…"}
                 </small>
               </div>
               <div className="fortune-orbit"><i /><b>{zodiac.icon}</b><span>{zodiac.name}</span></div>
             </section>
-            <section className="api-insight-grid" aria-label="今日運勢重點">
-              {fortuneInsights.map((insight) => (
-                <article key={insight.label}>
-                  <i>{insight.icon}</i>
-                  <div><span>{insight.label}</span><p>{insight.text}</p></div>
+            {fortuneAspects.length > 0 && <section className="api-insight-grid" aria-label="每日運勢四大生活面向">
+              {fortuneAspects.map((aspect) => (
+                <article key={aspect.key}>
+                  <i>{aspect.icon}</i>
+                  <div><span>{aspect.label}{typeof aspect.score === "number" && <b>{aspect.score} / 5</b>}</span><p>{aspect.text}</p></div>
                 </article>
               ))}
-            </section>
+            </section>}
             <section className="tarot-section">
               <div className="tarot-heading">
                 <div><span>DAILY TAROT</span><h2>選一張今天最有感覺的牌</h2><p>先放慢一下，憑第一直覺選擇。每次進入可抽一張，翻牌後再看今日提醒。</p></div>

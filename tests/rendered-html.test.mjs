@@ -69,7 +69,7 @@ test("今日運勢依生日星座與日期取得 API 內容", async () => {
   assert.match(page, /dailySeed\(`\$\{fortuneIdentity\}:\$\{dayKey\}`\)/);
   assert.match(page, />今日運勢</);
   assert.match(page, /DAILY HOROSCOPE/);
-  assert.match(page, /每日運勢 API・繁體中文/);
+  assert.match(page, /AstroJson 每日運勢・繁體中文/);
   assert.match(page, /生日運勢・輕鬆參考/);
 });
 
@@ -101,7 +101,7 @@ test("生日可判斷星座並顯示 API 當日運勢", async () => {
   assert.match(page, /name: "獅子座", apiSign: "leo", icon: "♌"/);
   assert.match(page, /DAILY HOROSCOPE/);
   assert.match(page, /\{zodiac\.name\}今日運勢/);
-  assert.match(page, /apiHoroscope \|\| fortune\.summary/);
+  assert.match(page, /apiFortune\?\.horoscope/);
   assert.doesNotMatch(page, /className="fortune-score-value"/);
   assert.doesNotMatch(page, /className="fortune-metrics"/);
   assert.doesNotMatch(page, /className="fortune-chips"/);
@@ -162,16 +162,19 @@ test("今日運勢串接免費 API 並在失敗時保留內建內容", async () 
   ]);
 
   assert.match(route, /https:\/\/freehoroscopeapi\.com\/api\/v1/);
-  assert.match(route, /get-horoscope\/daily\?sign=/);
+  assert.match(route, /https:\/\/api\.astrojson\.com\/v1\/horoscopes/);
+  assert.match(route, /"X-API-KEY": apiKey/);
+  assert.match(route, /horoscope\?\.general/);
+  assert.match(route, /aspects: \{ career, finance, health, romance \}/);
   assert.match(route, /api\.mymemory\.translated\.net\/get/);
   assert.match(route, /langpair", "en\|zh-TW"/);
-  assert.match(route, /translateToTraditionalChinese\(result\.data\.horoscope\)/);
+  assert.match(route, /translateToTraditionalChinese\(horoscope\.general\)/);
   assert.match(route, /chineseCharacters < 12/);
   assert.match(route, /Cache-Control.*private, no-store/);
   assert.match(page, /fetch\(`\/api\/fortune\?sign=\$\{zodiac\.apiSign\}`/);
-  assert.match(page, /apiHoroscope \|\| fortune\.summary/);
+  assert.match(page, /apiFortune\?\.horoscope/);
   assert.match(page, /內建運勢・API 暫時無法使用/);
-  assert.match(page, /每日運勢 API・繁體中文/);
+  assert.match(page, /AstroJson 每日運勢・繁體中文/);
   assert.match(page, /cache: "no-store"/);
 });
 
@@ -242,9 +245,10 @@ test("今日運勢以 API 長文為主並支援響應式版面", async () => {
 
   assert.match(page, /className="fortune-hero fortune-api-hero"/);
   assert.match(page, /className="api-insight-grid"/);
-  assert.match(page, /今日重點/);
-  assert.match(page, /行動方向/);
-  assert.match(page, /給自己的提醒/);
+  assert.match(page, /label: "財運"/);
+  assert.match(page, /label: "愛情人際"/);
+  assert.match(page, /label: "事業工作"/);
+  assert.match(page, /label: "健康狀態"/);
   assert.match(styles, /\.fortune-api-hero \{ min-height: 330px; grid-template-columns: minmax\(0, 1fr\) 190px/);
   assert.match(styles, /\.fortune-api-hero \.fortune-summary p \{ max-width: 760px; font-size: 16px; line-height: 2/);
   assert.match(styles, /\.fortune-page \.page-heading \{ align-items: flex-start; flex-direction: column/);

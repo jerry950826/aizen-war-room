@@ -122,10 +122,12 @@ button { color: inherit; }
 .fortune-api-hero { min-height: 330px; grid-template-columns: minmax(0, 1fr) 190px; padding: 46px 52px; }
 .fortune-api-hero .fortune-summary p { max-width: 760px; font-size: 16px; line-height: 2; }
 .fortune-api-hero .fortune-summary h2 { font-size: 36px; }
-.api-insight-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.api-insight-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .api-insight-grid article { min-width: 0; min-height: 142px; padding: 22px; display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-radius: 15px; background: white; box-shadow: 0 8px 24px rgba(28,35,67,.045); }
 .api-insight-grid i { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #126cc4; background: #eaf5ff; font-size: 15px; font-style: normal; font-weight: 900; }
 .api-insight-grid span { color: #1b70bf; font-size: 9px; font-weight: 900; letter-spacing: .08em; }
+.api-insight-grid span { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.api-insight-grid span b { color: #76879a; font-size: 9px; letter-spacing: 0; }
 .api-insight-grid p { margin: 9px 0 0; color: #465467; font-size: 11px; line-height: 1.75; }
 .fortune-score { min-width: 0; padding-right: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-right: 1px solid rgba(255,255,255,.2); }
 .fortune-score span, .fortune-score small { color: #cfe7fa; font-size: 10px; }

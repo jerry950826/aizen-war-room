@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "cloudflare:workers";
 
 const apiBaseUrl = "https://freehoroscopeapi.com/api/v1";
+const astroJsonBaseUrl = "https://api.astrojson.com/v1/horoscopes";
 const zodiacSigns = new Set([
   "aries", "taurus", "gemini", "cancer", "leo", "virgo",
   "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
@@ -55,12 +57,44 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await fetchJson(`${apiBaseUrl}/get-horoscope/daily?sign=${encodeURIComponent(sign)}`) as {
-      data?: { date?: string; sign?: string; horoscope?: string };
+    const apiKey = (env as { ASTROJSON_API_KEY?: string }).ASTROJSON_API_KEY;
+    if (!apiKey) throw new Error("AstroJson API key is not configured");
+    const response = await fetch(`${astroJsonBaseUrl}?sign=${encodeURIComponent(sign)}&lang=en&date=today&period=daily`, {
+      headers: { Accept: "application/json", "X-API-KEY": apiKey },
+      cf: { cacheTtl: 21600, cacheEverything: true },
+    });
+    if (!response.ok) throw new Error(`AstroJson returned ${response.status}`);
+    const result = await response.json() as {
+      date?: string;
+      sign?: string;
+      color?: string;
+      colorHex?: string;
+      luckyNumber?: number;
+      luckyTime?: string;
+      mood?: string;
+      compatibility?: string[];
+      horoscope?: { general?: string; career?: string; finance?: string; health?: string; romance?: string };
+      horoscopeScore?: { general?: number; career?: number; finance?: number; health?: number; romance?: number };
     };
-    if (!result.data?.horoscope) throw new Error("Fortune API returned an incomplete response");
-    const horoscope = await translateToTraditionalChinese(result.data.horoscope);
-    return NextResponse.json({ ...result.data, horoscope, source: "api-translated" }, {
+    const horoscope = result.horoscope;
+    if (!horoscope?.general || !horoscope.career || !horoscope.finance || !horoscope.health || !horoscope.romance) {
+      throw new Error("AstroJson returned an incomplete response");
+    }
+    const [general, career, finance, health, romance] = await Promise.all([
+      translateToTraditionalChinese(horoscope.general),
+      translateToTraditionalChinese(horoscope.career),
+      translateToTraditionalChinese(horoscope.finance),
+      translateToTraditionalChinese(horoscope.health),
+      translateToTraditionalChinese(horoscope.romance),
+    ]);
+    return NextResponse.json({
+      date: result.date,
+      sign: result.sign,
+      horoscope: general,
+      aspects: { career, finance, health, romance },
+      scores: result.horoscopeScore,
+      source: "astrojson-translated",
+    }, {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch {
