@@ -708,13 +708,13 @@ export default function Home() {
         {view === "fortune" && (
           <div className="page fortune-page">
             <div className="page-heading">
-              <div><p className="kicker">DAILY FORTUNE</p><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
+              <div><p className="kicker">今日運勢</p><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
               <span className="fortune-disclaimer">{fortune.basis}</span>
             </div>
             <section className="fortune-hero fortune-api-hero">
               <div className="fortune-summary">
                 <div className="zodiac-badge"><b>{zodiac.icon}</b><span>{zodiac.name}<small>{zodiac.element}・{fortune.date}</small></span></div>
-                <span>DAILY HOROSCOPE</span><h2>{zodiac.name}今日運勢</h2><p>{apiFortune?.horoscope || "今日 API 運勢暫時無法取得，請稍後再試。"}</p>
+                <span>今日心情與行動提醒</span><h2>{zodiac.name}今日運勢</h2><p>{apiFortune?.horoscope || "今日運勢暫時無法取得，請稍後再試。"}</p>
                 <small className={`fortune-source ${horoscopeStatus}`}>
                   {horoscopeStatus === "api" ? "AstroJson 每日運勢・繁體中文" : horoscopeStatus === "fallback" ? "API 暫時無法使用" : "正在讀取今日星象…"}
                 </small>
@@ -731,7 +731,7 @@ export default function Home() {
             </section>}
             <section className="tarot-section">
               <div className="tarot-heading">
-                <div><span>DAILY TAROT</span><h2>選一張今天最有感覺的牌</h2><p>先放慢一下，憑第一直覺選擇。每次進入可抽一張，翻牌後再看今日提醒。</p></div>
+                <div><span>每日塔羅</span><h2>選一張今天最有感覺的牌</h2><p>先放慢一下，憑第一直覺選擇。每次進入可抽一張，翻牌後再看今日提醒。</p></div>
                 {tarotResult && <button type="button" onClick={resetTarot}>重新洗牌</button>}
               </div>
               <div className={`tarot-deck ${tarotResult ? "has-result" : ""}`} aria-label="五張塔羅牌，請選擇一張">
@@ -747,7 +747,7 @@ export default function Home() {
                       aria-label={`選擇第 ${slot + 1} 張塔羅牌`}
                     >
                       <span className="tarot-card-inner">
-                        <span className="tarot-card-back"><i>✦</i><b>{slot + 1}</b><small>CHOOSE ME</small></span>
+                        <span className="tarot-card-back"><i>✦</i><b>{slot + 1}</b><small>選這張</small></span>
                         <span className="tarot-card-front"><i>{tarotResult?.orientation === "reversed" ? "☾" : "☀"}</i><b>{tarotResult?.name}</b><small>{tarotResult?.orientation === "reversed" ? "逆位" : "正位"}</small></span>
                       </span>
                     </button>
@@ -760,7 +760,7 @@ export default function Home() {
                   <div><span>{tarotResult.arcana === "major" ? "大阿爾克那" : "小阿爾克那"}</span><h3>{tarotResult.name}・{tarotResult.orientation === "reversed" ? "逆位" : "正位"}</h3></div>
                   <p className="tarot-meaning">{tarotResult.meaning}</p>
                   <p>{tarotResult.description}</p>
-                  <small>牌義資料來自 Free Horoscope &amp; Tarot API；內容僅供日常靈感參考。</small>
+                  <small>牌義資料來自免費塔羅資料服務，內容已翻譯為繁體中文，僅供日常靈感參考。</small>
                 </article>
               )}
             </section>

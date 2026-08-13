@@ -35,7 +35,7 @@ async function fetchJson(url: string) {
   return response.json() as Promise<unknown>;
 }
 
-async function translateToTraditionalChinese(text: string) {
+async function translateToTraditionalChinese(text: string, minimumChineseCharacters = 12) {
   const translationUrl = new URL("https://translate.googleapis.com/translate_a/single");
   translationUrl.searchParams.set("client", "gtx");
   translationUrl.searchParams.set("sl", "en");
@@ -45,7 +45,7 @@ async function translateToTraditionalChinese(text: string) {
   const result = await fetchJson(translationUrl.toString()) as Array<Array<Array<string>>>;
   const translatedText = result[0]?.map((segment) => segment[0]).join("").trim();
   const chineseCharacters = translatedText?.match(/[\u3400-\u9fff]/g)?.length ?? 0;
-  if (!translatedText || chineseCharacters < 12) {
+  if (!translatedText || chineseCharacters < minimumChineseCharacters) {
     throw new Error("Translation API returned an incomplete response");
   }
   return translatedText;
@@ -236,14 +236,19 @@ export async function POST(request: NextRequest) {
   const random = crypto.getRandomValues(new Uint32Array(1))[0];
   const card = cards[(random + slot * 17) % cards.length];
   const reversed = ((random >>> 3) + slot) % 4 === 0;
+  const [translatedName, translatedMeaning, translatedDescription] = await Promise.all([
+    translateToTraditionalChinese(card.name, 1),
+    translateToTraditionalChinese(reversed ? card.meaning_rev : card.meaning_up),
+    translateToTraditionalChinese(card.desc),
+  ]);
   return NextResponse.json({
     card: {
-      name: card.name,
+      name: translatedName,
       code: card.name_short,
       arcana: card.type,
       orientation: reversed ? "reversed" : "upright",
-      meaning: reversed ? card.meaning_rev : card.meaning_up,
-      description: card.desc,
+      meaning: translatedMeaning,
+      description: translatedDescription,
     },
     source,
   });

@@ -175,7 +175,7 @@ test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   assert.match(route, /今天的心情：/);
   assert.match(route, /今天工作上可以這樣做：/);
   assert.match(route, /translated\.push\(await translateToTraditionalChinese\(removeAstrologyTerms\(text\)\)\)/);
-  assert.match(route, /chineseCharacters < 12/);
+  assert.match(route, /chineseCharacters < minimumChineseCharacters/);
   assert.match(controlWorker, /SELECT status,result_json AS resultJson FROM daily_fortunes/);
   assert.match(controlWorker, /INSERT OR IGNORE INTO daily_fortunes/);
   assert.match(controlWorker, /UPDATE daily_fortunes SET status='ready',result_json=/);
@@ -199,6 +199,12 @@ test("塔羅牌提供五張牌選擇、翻牌與正逆位解讀", async () => {
   assert.match(page, /選一張今天最有感覺的牌/);
   assert.match(page, /drawTarot\(slot\)/);
   assert.match(route, /\/tarot\/cards/);
+  assert.match(route, /translateToTraditionalChinese\(card\.name, 1\)/);
+  assert.match(page, /每日塔羅/);
+  assert.match(page, /選這張/);
+  assert.doesNotMatch(page, /DAILY TAROT|CHOOSE ME|Free Horoscope/);
+  assert.match(styles, /\.api-insight-grid p \{[^}]*font-size: 15px/);
+  assert.match(styles, /\.api-insight-grid span b \{[^}]*background: linear-gradient/);
   assert.match(route, /orientation: reversed \? "reversed" : "upright"/);
   assert.match(styles, /\.tarot-choice\.chosen \.tarot-card-inner \{ transform: rotateY\(180deg\)/);
   assert.match(styles, /@keyframes tarot-reveal/);

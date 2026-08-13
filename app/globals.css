@@ -123,12 +123,12 @@ button { color: inherit; }
 .fortune-api-hero .fortune-summary p { max-width: 760px; font-size: 16px; line-height: 2; }
 .fortune-api-hero .fortune-summary h2 { font-size: 36px; }
 .api-insight-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.api-insight-grid article { min-width: 0; min-height: 142px; padding: 22px; display: flex; align-items: flex-start; gap: 14px; border: 1px solid var(--line); border-radius: 15px; background: white; box-shadow: 0 8px 24px rgba(28,35,67,.045); }
+.api-insight-grid article { min-width: 0; min-height: 160px; padding: 26px; display: flex; align-items: flex-start; gap: 16px; border: 1px solid #cfdeec; border-radius: 15px; background: white; box-shadow: 0 10px 28px rgba(28,75,120,.08); }
 .api-insight-grid i { flex: 0 0 34px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #126cc4; background: #eaf5ff; font-size: 15px; font-style: normal; font-weight: 900; }
-.api-insight-grid span { color: #1b70bf; font-size: 9px; font-weight: 900; letter-spacing: .08em; }
+.api-insight-grid span { color: #1264ad; font-size: 14px; font-weight: 900; letter-spacing: .04em; }
 .api-insight-grid span { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.api-insight-grid span b { color: #76879a; font-size: 9px; letter-spacing: 0; }
-.api-insight-grid p { margin: 9px 0 0; color: #465467; font-size: 11px; line-height: 1.75; }
+.api-insight-grid span b { min-width: 62px; padding: 7px 10px; border-radius: 999px; color: white; background: linear-gradient(135deg, #0876d8, #4a54d8); font-size: 14px; line-height: 1; text-align: center; letter-spacing: 0; box-shadow: 0 5px 12px rgba(31,93,190,.25); }
+.api-insight-grid p { margin: 14px 0 0; color: #25384d; font-size: 15px; font-weight: 600; line-height: 1.8; }
 .fortune-score { min-width: 0; padding-right: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-right: 1px solid rgba(255,255,255,.2); }
 .fortune-score span, .fortune-score small { color: #cfe7fa; font-size: 10px; }
 .fortune-score-value { margin-top: 10px; display: flex; align-items: baseline; justify-content: center; gap: 5px; }
@@ -178,7 +178,7 @@ button { color: inherit; }
 .lucky-card dd { margin: 5px 0 0; font-size: 11px; font-weight: 800; }
 .tarot-section { margin-top: 20px; padding: 32px; overflow: hidden; border-radius: 20px; color: white; background: radial-gradient(circle at 50% -20%, rgba(146,115,255,.42), transparent 45%), linear-gradient(145deg, #15113b, #281b55 55%, #10244a); box-shadow: 0 18px 42px rgba(22,17,62,.2); }
 .tarot-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
-.tarot-heading span { color: #cbbcff; font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.tarot-heading span { color: #cbbcff; font-size: 12px; font-weight: 900; letter-spacing: .12em; }
 .tarot-heading h2 { margin: 7px 0; font-size: 24px; }
 .tarot-heading p { max-width: 620px; margin: 0; color: #c9c7df; font-size: 11px; line-height: 1.7; }
 .tarot-heading button { padding: 9px 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 20px; color: white; background: rgba(255,255,255,.08); cursor: pointer; }
@@ -199,15 +199,15 @@ button { color: inherit; }
 .tarot-card-back small { margin-top: 5px; color: #9e96c7; font-size: 6px; letter-spacing: .16em; }
 .tarot-card-front { transform: rotateY(180deg); background: radial-gradient(circle at 50% 30%, #fff5cc, #e6c570 58%, #8a5f24); color: #251b3c; text-align: center; }
 .tarot-card-front i { font-size: 32px; font-style: normal; }
-.tarot-card-front b { margin-top: 12px; font-family: Georgia, serif; font-size: 14px; }
+.tarot-card-front b { margin-top: 12px; font-size: 15px; }
 .tarot-card-front small { margin-top: 7px; font-size: 9px; font-weight: 900; }
 .tarot-deck.has-result .tarot-choice:not(.chosen) { opacity: .2; transform: scale(.9); }
 .tarot-loading { margin: 4px 0 0; color: #d7caff; text-align: center; font-size: 11px; }
 .tarot-reading { margin: 26px auto 0; max-width: 760px; padding: 24px 28px; display: grid; grid-template-columns: minmax(180px,.7fr) 1.3fr; gap: 8px 28px; border: 1px solid rgba(225,199,132,.32); border-radius: 14px; background: rgba(255,255,255,.08); animation: tarot-reveal .45s ease both; }
 .tarot-reading span { color: #d8c280; font-size: 8px; font-weight: 900; letter-spacing: .12em; }
-.tarot-reading h3 { margin: 7px 0 0; font-family: Georgia, serif; font-size: 20px; }
-.tarot-reading p { margin: 0; color: #d2d0e0; font-size: 11px; line-height: 1.7; }
-.tarot-reading .tarot-meaning { color: white; font-size: 13px; font-weight: 700; }
+.tarot-reading h3 { margin: 7px 0 0; font-size: 22px; }
+.tarot-reading p { margin: 0; color: #e3e1ee; font-size: 14px; line-height: 1.8; }
+.tarot-reading .tarot-meaning { color: white; font-size: 16px; font-weight: 800; }
 .tarot-reading small { grid-column: 1 / -1; margin-top: 8px; color: #9290ab; font-size: 8px; }
 @keyframes tarot-reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .cosmic-grid { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.35fr); gap: 16px; align-items: stretch; }
