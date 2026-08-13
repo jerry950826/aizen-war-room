@@ -92,9 +92,13 @@ async function dailyFortuneCache(request: Request, env: Env) {
   if (!date || !sign || !ownerToken) return json({ error: "缺少每日運勢資料" }, 400);
   if (body.action === "claim") {
     const now = Date.now();
+    const staleBefore = now - 60_000;
     await env.DB.prepare(
       "INSERT OR IGNORE INTO daily_fortunes (email,fortune_date,sign,status,owner_token,created_at,updated_at) VALUES (?,?,?,'pending',?,?,?)",
     ).bind(auth.session.email, date, sign, ownerToken, now, now).run();
+    await env.DB.prepare(
+      "UPDATE daily_fortunes SET owner_token=?,updated_at=? WHERE email=? AND fortune_date=? AND sign=? AND status='pending' AND updated_at<?",
+    ).bind(ownerToken, now, auth.session.email, date, sign, staleBefore).run();
     const row = await env.DB.prepare(
       "SELECT status,owner_token AS ownerToken,result_json AS resultJson FROM daily_fortunes WHERE email=? AND fortune_date=? AND sign=?",
     ).bind(auth.session.email, date, sign).first();

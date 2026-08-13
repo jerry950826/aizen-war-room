@@ -31,7 +31,7 @@ const initialServices: Service[] = [
     eyebrow: "人事作業",
     title: "請假系統",
     description: "假單申請、簽核進度與年度假別餘額",
-    metric: "06",
+    metric: "0",
     metricLabel: "待簽核",
     color: "#0073df",
     icon: "休",
@@ -42,7 +42,7 @@ const initialServices: Service[] = [
     eyebrow: "財務作業",
     title: "請款系統",
     description: "費用申請、單據核銷與付款進度追蹤",
-    metric: "12",
+    metric: "0",
     metricLabel: "處理中",
     color: "#ff0000",
     icon: "款",
@@ -53,7 +53,7 @@ const initialServices: Service[] = [
     eyebrow: "教務營運",
     title: "講師看板",
     description: "講師排程、授課時數與合作狀態總覽",
-    metric: "28",
+    metric: "0",
     metricLabel: "本月場次",
     color: "#1685c5",
     icon: "講",
@@ -396,9 +396,9 @@ export default function Home() {
     }
     if (data.systems?.length) {
       const metrics: Record<ServiceId, Pick<Service, "metric" | "metricLabel">> = {
-        leave: { metric: "06", metricLabel: "待簽核" },
-        claims: { metric: "12", metricLabel: "處理中" },
-        instructors: { metric: "28", metricLabel: "本月場次" },
+        leave: { metric: "0", metricLabel: "待簽核" },
+        claims: { metric: "0", metricLabel: "處理中" },
+        instructors: { metric: "0", metricLabel: "本月場次" },
       };
       setServices(data.systems
         .filter((system): system is typeof system & { id: ServiceId } => system.active !== false && ["leave", "claims", "instructors"].includes(system.id))
@@ -687,10 +687,10 @@ export default function Home() {
             </div>
 
             <section className="overview-strip">
-              <div><span>今日待辦</span><b>18</b><small>項工作</small></div>
-              <div><span>等待簽核</span><b>06</b><small>筆申請</small></div>
-              <div><span>本月完成</span><b>142</b><small>項作業</small></div>
-              <div className="progress-block"><span>本月作業完成率</span><b>78%</b><div className="progress"><i /></div></div>
+              <div><span>今日待辦</span><b>0</b><small>項工作</small></div>
+              <div><span>等待簽核</span><b>0</b><small>筆申請</small></div>
+              <div><span>本月完成</span><b>0</b><small>項作業</small></div>
+              <div className="progress-block"><span>本月作業完成率</span><b>0%</b><div className="progress"><i /></div></div>
             </section>
 
             <div className="section-title"><div><h2>業務系統</h2><p>選擇要前往的工作區</p></div><span>{visibleServices.length} 個可用系統</span></div>

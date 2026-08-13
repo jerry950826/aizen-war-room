@@ -88,6 +88,20 @@ function makePlainChinese(text: string, kind: "mood" | "finance" | "romance" | "
   return `${prefixes[kind]}${message}`;
 }
 
+function emergencyPlainChinese(text: string, kind: "mood" | "finance" | "romance" | "career" | "health", score?: number) {
+  const level = typeof score === "number" && score >= 4 ? "順利" : typeof score === "number" && score <= 2 ? "需要放慢" : "平穩";
+  const choices = {
+    mood: [`今天心情大致${level}，先把最重要的事情做好，不用一次扛太多。`, `今天容易想得比較多，照自己的步調走，臨時變化也不用急。`],
+    finance: [`今天金錢狀況${level}，先顧好必要開銷，較大的決定多看一眼。`, `今天花錢前先停一下，確認真的需要再出手，會比較安心。`],
+    romance: [`今天人際互動${level}，有話直接說清楚，比猜來猜去更省力。`, `今天多聽對方說完再回應，小小的體貼會讓關係更順。`],
+    career: [`今天工作節奏${level}，先完成最關鍵的一件事，再處理其他雜事。`, `今天工作上適合把步驟排清楚，遇到不確定就先問，別悶著做。`],
+    health: [`今天身體狀態${level}，記得補水、起身活動，累了就稍微休息。`, `今天不要把行程排太滿，肩頸與眼睛累時就停下來放鬆一下。`],
+  };
+  let hash = 0;
+  for (const character of text) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  return choices[kind][hash % choices[kind].length];
+}
+
 async function getDailyAstroJson(sign: string, apiKey: string) {
   const response = await fetch(`${astroJsonBaseUrl}?sign=${encodeURIComponent(sign)}&lang=en&date=${taipeiDayKey()}&period=daily`, {
     headers: { Accept: "application/json", "X-API-KEY": apiKey },
@@ -166,27 +180,28 @@ export async function GET(request: NextRequest) {
       throw new Error("AstroJson returned an incomplete response");
     }
     failureStage = "translation";
-    const translated: string[] = [];
-    for (const text of [horoscope.general, horoscope.career, horoscope.finance, horoscope.health, horoscope.romance]) {
-      translated.push(await translateToTraditionalChinese(removeAstrologyTerms(text)));
-    }
-    const [generalText, careerText, financeText, healthText, romanceText] = translated;
-    const general = makePlainChinese(generalText, "mood");
-    const career = makePlainChinese(careerText, "career");
-    const finance = makePlainChinese(financeText, "finance");
-    const health = makePlainChinese(healthText, "health");
-    const romance = makePlainChinese(romanceText, "romance");
+    const sourceTexts = [horoscope.general, horoscope.career, horoscope.finance, horoscope.health, horoscope.romance];
+    const kinds = ["mood", "career", "finance", "health", "romance"] as const;
+    const scores = [result.horoscopeScore?.general, result.horoscopeScore?.career, result.horoscopeScore?.finance, result.horoscopeScore?.health, result.horoscopeScore?.romance];
+    const translated = await Promise.allSettled(sourceTexts.map((text) => translateToTraditionalChinese(removeAstrologyTerms(text))));
+    const plainTexts = translated.map((translation, index) => translation.status === "fulfilled"
+      ? makePlainChinese(translation.value, kinds[index])
+      : emergencyPlainChinese(sourceTexts[index], kinds[index], scores[index]));
+    const [general, career, finance, health, romance] = plainTexts;
     const fortuneResult: StoredFortune = {
       date: result.date,
       sign: result.sign,
       horoscope: general,
       aspects: { career, finance, health, romance },
       scores: result.horoscopeScore,
-      source: "astrojson-daily-cache-plain-zh-tw",
+      source: translated.every((translation) => translation.status === "fulfilled")
+        ? "astrojson-daily-cache-plain-zh-tw"
+        : "astrojson-daily-cache-plain-zh-tw-resilient",
     };
     await fortuneCacheRequest(request, "/fortune-cache", { action: "store", date: fortuneDate, sign, ownerToken, result: fortuneResult });
     return NextResponse.json(fortuneResult, { headers: { "Cache-Control": "private, no-store" } });
-  } catch {
+  } catch (error) {
+    console.error("Daily fortune failed", { stage: failureStage, message: error instanceof Error ? error.message : "Unknown error" });
     if (claimedOwnerToken) {
       await fortuneCacheRequest(request, "/fortune-cache", {
         action: "release", date: claimedDate, sign: claimedSign, ownerToken: claimedOwnerToken,

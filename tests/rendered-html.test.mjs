@@ -179,6 +179,27 @@ test("公司組織圖顯示每位同仁照片", async () => {
   assert.match(styles, /\.organization-avatar img \{[^}]*object-fit: cover/);
 });
 
+test("沒有實際來源的首頁數字先顯示零", async () => {
+  const [page, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /<span>今日待辦<\/span><b>0<\/b>/);
+  assert.match(page, /<span>等待簽核<\/span><b>0<\/b>/);
+  assert.match(page, /<span>本月完成<\/span><b>0<\/b>/);
+  assert.match(page, /<span>本月作業完成率<\/span><b>0%<\/b>/);
+  assert.match(styles, /\.progress i \{[^}]*width: 0;/);
+});
+
+test("翻譯服務失敗時仍保存 AstroJson 每日內容", async () => {
+  const route = await readFile(new URL("../app/api/fortune/route.ts", import.meta.url), "utf8");
+
+  assert.match(route, /Promise\.allSettled/);
+  assert.match(route, /emergencyPlainChinese/);
+  assert.match(route, /astrojson-daily-cache-plain-zh-tw-resilient/);
+});
+
 test("今日運勢串接 AstroJson 並在失敗時清楚標示", async () => {
   const [page, route, controlWorker] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),

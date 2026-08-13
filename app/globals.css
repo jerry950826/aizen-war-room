@@ -100,7 +100,7 @@ button { color: inherit; }
 .progress-block { position: relative; }
 .progress-block > b { position: absolute; right: 28px; top: 17px; font-size: 16px; }
 .progress { height: 6px; background: #ececf4; border-radius: 10px; overflow: hidden; margin-top: 22px; }
-.progress i { display: block; height: 100%; width: 78%; background: linear-gradient(90deg, #0073df, #4da8f7); border-radius: 10px; }
+.progress i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #0073df, #4da8f7); border-radius: 10px; }
 .section-title { display: flex; justify-content: space-between; align-items: end; margin-bottom: 17px; }
 .section-title h2 { margin: 0; font-size: 18px; }
 .section-title p { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
