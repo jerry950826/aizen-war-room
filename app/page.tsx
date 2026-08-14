@@ -222,6 +222,7 @@ export default function Home() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [activeLoginField, setActiveLoginField] = useState<"email" | "password" | null>(null);
+  const [rememberAccount, setRememberAccount] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -266,6 +267,16 @@ export default function Home() {
   );
   const avatarEnglishName = signedInOrgPerson?.english ?? profile.english;
   const zodiac = zodiacFor(signedInOrgPerson?.birthday ?? null);
+
+  useEffect(() => {
+    const rememberedEmail = window.localStorage.getItem("aizen-war-room-remembered-email");
+    if (!rememberedEmail) return;
+    const loadRememberedAccount = window.setTimeout(() => {
+      setEmail(rememberedEmail);
+      setRememberAccount(true);
+    }, 0);
+    return () => window.clearTimeout(loadRememberedAccount);
+  }, []);
   const fortune = useMemo(() => {
     const dayKey = currentDay.key;
     const fortuneIdentity = signedInOrgPerson?.birthday ?? email;
@@ -442,6 +453,11 @@ export default function Home() {
         return;
       }
       const data = await response.json() as { token: string; name: string; role: Member["role"] };
+      if (rememberAccount) {
+        window.localStorage.setItem("aizen-war-room-remembered-email", normalizedEmail);
+      } else {
+        window.localStorage.removeItem("aizen-war-room-remembered-email");
+      }
       setToken(data.token);
       setLoggedInRole(data.role);
       setUser(adminEmails[normalizedEmail] ?? normalizedEmail.split("@")[0]);
@@ -620,6 +636,7 @@ export default function Home() {
             </div>
 
             <div className="login-options">
+              <label className="remember"><input type="checkbox" name="war-room-remember" autoComplete="off" checked={rememberAccount} onChange={(event) => setRememberAccount(event.target.checked)} /> 記住我的帳號</label>
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 

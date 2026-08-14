@@ -53,7 +53,9 @@ button { color: inherit; }
 .field select { cursor: pointer; }
 .eye, .text-button { border: 0; background: transparent; color: var(--purple); cursor: pointer; font-size: 12px; font-weight: 700; }
 .field .eye { align-self: stretch; min-width: 54px; padding: 0 14px; border-left: 1px solid #edf0f4; background: white; }
-.login-options { margin: 18px 0 26px; display: flex; align-items: center; justify-content: flex-end; font-size: 12px; }
+.login-options { margin: 18px 0 26px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.remember { display: flex; gap: 8px; align-items: center; color: #687188; }
+.remember input { accent-color: var(--purple); }
 .primary-button { height: 50px; border: 0; border-radius: 9px; padding: 0 22px; background: linear-gradient(135deg, #0a84f3, #0073df); color: white; font-weight: 800; cursor: pointer; box-shadow: 0 9px 20px rgba(0,115,223,.22); display: inline-flex; justify-content: center; align-items: center; gap: 14px; transition: transform .2s, box-shadow .2s; }
 .primary-button:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(0,115,223,.3); }
 .login-card > .primary-button { width: 100%; }

@@ -137,7 +137,12 @@ test("登入頁不預填特定帳號或密碼", async () => {
   assert.match(page, /autoComplete="new-password"/);
   assert.match(page, /readOnly=\{activeLoginField !== "email"\}/);
   assert.match(page, /readOnly=\{activeLoginField !== "password"\}/);
-  assert.doesNotMatch(page, /rememberAccount|記住我的帳號|demo-emails|list="demo-emails"/);
+  assert.match(page, /const \[rememberAccount, setRememberAccount\] = useState\(false\)/);
+  assert.match(page, /localStorage\.getItem\("aizen-war-room-remembered-email"\)/);
+  assert.match(page, /localStorage\.setItem\("aizen-war-room-remembered-email", normalizedEmail\)/);
+  assert.match(page, /localStorage\.removeItem\("aizen-war-room-remembered-email"\)/);
+  assert.match(page, /checked=\{rememberAccount\}/);
+  assert.doesNotMatch(page, /demo-emails|list="demo-emails"/);
   assert.doesNotMatch(page, /maggiefang@ai-zens\.com" \/>|ritahsieh@ai-zens\.com" \/>|jerrychang@ai-zens\.com" \/>/);
 });
 
