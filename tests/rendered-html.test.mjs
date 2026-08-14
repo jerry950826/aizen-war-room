@@ -208,6 +208,15 @@ test("戰情室首頁使用精簡品牌與導覽", async () => {
   assert.match(styles, /\.sidebar nav p \{[^}]*font-size: 11px;/);
 });
 
+test("各功能頁標題不顯示重複小標", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.doesNotMatch(page, /<p className="kicker">今日運勢<\/p>/);
+  assert.doesNotMatch(page, /ACCOUNT SECURITY|ACCESS CONTROL|COMPANY ORGANIZATION/);
+  assert.match(page, /<div><h1>今日運勢<\/h1>/);
+  assert.match(page, /<div><h1>公司組織圖<\/h1>/);
+});
+
 test("翻譯服務失敗時仍保存 AstroJson 每日內容", async () => {
   const route = await readFile(new URL("../app/api/fortune/route.ts", import.meta.url), "utf8");
 

@@ -725,7 +725,7 @@ export default function Home() {
         {view === "fortune" && (
           <div className="page fortune-page">
             <div className="page-heading">
-              <div><p className="kicker">今日運勢</p><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
+              <div><h1>今日運勢</h1><p>{fortune.date}・給自己一個清楚、從容的工作節奏。</p></div>
               <span className="fortune-disclaimer">{fortune.basis}</span>
             </div>
             <section className="fortune-hero fortune-api-hero">
@@ -786,7 +786,7 @@ export default function Home() {
 
         {view === "password" && (
           <div className="page narrow-page">
-            <div className="page-heading"><div><p className="kicker">ACCOUNT SECURITY</p><h1>修改登入密碼</h1><p>定期更新密碼，讓帳號維持安全。</p></div></div>
+            <div className="page-heading"><div><h1>修改登入密碼</h1><p>定期更新密碼，讓帳號維持安全。</p></div></div>
             <form className="settings-card" onSubmit={changePassword}>
               <div className="settings-icon">⌁</div>
               <div className="form-copy"><h2>{profile.english}・{profile.name}</h2><p>{profile.department}・{profile.title}　／　{email}</p></div>
@@ -801,7 +801,7 @@ export default function Home() {
 
         {view === "permissions" && (
           <div className="page">
-            <div className="page-heading"><div><p className="kicker">ACCESS CONTROL</p><h1>頁面權限管控</h1><p>設定管理者可進入的業務系統。</p></div><button className="primary-button save-button" disabled={permissionBusy} onClick={() => void savePermissions()}>{permissionBusy ? "儲存中…" : "儲存變更"}</button></div>
+            <div className="page-heading"><div><h1>頁面權限管控</h1><p>設定管理者可進入的業務系統。</p></div><button className="primary-button save-button" disabled={permissionBusy} onClick={() => void savePermissions()}>{permissionBusy ? "儲存中…" : "儲存變更"}</button></div>
             <section className="permission-card">
               <div className="permission-head">
                 <div><h2>管理者頁面存取權</h2><p>勾選代表該帳號登入後可以看到並進入此系統。</p></div>
@@ -835,7 +835,7 @@ export default function Home() {
         {view === "people" && (
           <div className="page">
             <div className="page-heading">
-              <div><p className="kicker">COMPANY ORGANIZATION</p><h1>公司組織圖</h1><p>查看公司部門、人員職稱與聯絡方式。</p></div>
+              <div><h1>公司組織圖</h1><p>查看公司部門、人員職稱與聯絡方式。</p></div>
               <span className="member-total">共 {organizationPeople.length} 位夥伴</span>
             </div>
             <section className="organization-chart">
