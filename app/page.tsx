@@ -222,7 +222,6 @@ export default function Home() {
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [activeLoginField, setActiveLoginField] = useState<"email" | "password" | null>(null);
-  const [rememberAccount, setRememberAccount] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -608,12 +607,7 @@ export default function Home() {
             <label htmlFor="account">公司信箱</label>
             <div className="field">
               <span className="field-icon email-field-icon" aria-hidden="true" />
-              <input id="account" name="war-room-email" type="email" inputMode="email" autoComplete="off" data-lpignore="true" data-1p-ignore="true" readOnly={activeLoginField !== "email"} list="demo-emails" value={email} onPointerDown={() => setActiveLoginField("email")} onFocus={() => setActiveLoginField("email")} onChange={(e) => setEmail(e.target.value)} placeholder="name@ai-zens.com" required />
-              <datalist id="demo-emails">
-                <option value="maggiefang@ai-zens.com" />
-                <option value="ritahsieh@ai-zens.com" />
-                <option value="jerrychang@ai-zens.com" />
-              </datalist>
+              <input id="account" name="war-room-email" type="email" inputMode="email" autoComplete="off" data-lpignore="true" data-1p-ignore="true" readOnly={activeLoginField !== "email"} value={email} onPointerDown={() => setActiveLoginField("email")} onFocus={() => setActiveLoginField("email")} onChange={(e) => setEmail(e.target.value)} placeholder="name@ai-zens.com" required />
             </div>
 
             <label htmlFor="password">密碼</label>
@@ -626,7 +620,6 @@ export default function Home() {
             </div>
 
             <div className="login-options">
-              <label className="remember"><input type="checkbox" name="war-room-remember" autoComplete="off" checked={rememberAccount} onChange={(event) => setRememberAccount(event.target.checked)} /> 記住我的帳號</label>
               <button type="button" className="text-button">忘記密碼？</button>
             </div>
 
