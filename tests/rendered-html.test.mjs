@@ -192,8 +192,20 @@ test("沒有實際來源的首頁數字先顯示零", async () => {
   assert.match(page, /<span>今日待辦<\/span><b>0<\/b>/);
   assert.match(page, /<span>等待簽核<\/span><b>0<\/b>/);
   assert.match(page, /<span>本月完成<\/span><b>0<\/b>/);
-  assert.match(page, /<span>本月作業完成率<\/span><b>0%<\/b>/);
-  assert.match(styles, /\.progress i \{[^}]*width: 0;/);
+  assert.match(page, /<span>本月作業完成率<\/span><b>100%<\/b>/);
+  assert.match(styles, /\.progress i \{[^}]*width: 100%;/);
+});
+
+test("戰情室首頁使用精簡品牌與導覽", async () => {
+  const [page, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(page, /<b>AIZen<\/b>/);
+  assert.match(page, /<p className="breadcrumb">AIZen \/ /);
+  assert.doesNotMatch(page, /COMMAND CENTER|aria-label="通知"/);
+  assert.match(styles, /\.sidebar nav p \{[^}]*font-size: 11px;/);
 });
 
 test("翻譯服務失敗時仍保存 AstroJson 每日內容", async () => {

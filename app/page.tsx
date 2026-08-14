@@ -602,7 +602,7 @@ export default function Home() {
         <section className="login-brand" aria-label="Aizen 戰情室介紹">
           <img className="brand-logo large" src="/aizen-mark.png" alt="Aizen" />
           <div className="brand-copy">
-            <span>AIZEN OPERATIONS</span>
+            <span>AIZen OPERATIONS</span>
             <h1>讓每一項行政作業，<br />都在掌握之中。</h1>
             <p>集中管理日常業務、簽核進度與團隊權限。從一個入口，快速抵達需要的工作。</p>
           </div>
@@ -614,7 +614,7 @@ export default function Home() {
 
         <section className="login-panel">
           <form className="login-card" onSubmit={login} autoComplete="off">
-            <div className="mobile-logo"><img className="brand-logo" src="/aizen-mark.png" alt="" />AIZEN</div>
+            <div className="mobile-logo"><img className="brand-logo" src="/aizen-mark.png" alt="" />AIZen</div>
             <p className="kicker">WELCOME BACK</p>
             <h2>登入戰情室</h2>
             <p className="muted">請使用您的公司信箱繼續</p>
@@ -652,7 +652,7 @@ export default function Home() {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <button className="side-brand" onClick={() => setView("dashboard")}><img className="brand-logo" src="/aizen-mark.png" alt="" /><b>AIZEN</b></button>
+        <button className="side-brand" onClick={() => setView("dashboard")}><img className="brand-logo" src="/aizen-mark.png" alt="" /><b>AIZen</b></button>
         <nav aria-label="主選單">
           <p>工作台</p>
           <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}><span>▦</span>戰情室總覽</button>
@@ -681,10 +681,9 @@ export default function Home() {
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="breadcrumb">AIZEN / {view === "dashboard" ? "戰情室總覽" : view === "fortune" ? "今日運勢" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "公司組織圖"}</p>
+            <p className="breadcrumb">AIZen / {view === "dashboard" ? "戰情室總覽" : view === "fortune" ? "今日運勢" : view === "password" ? "修改登入密碼" : view === "permissions" ? "頁面權限管控" : "公司組織圖"}</p>
           </div>
           <div className="top-actions">
-            <button className="icon-button" aria-label="通知">♢<i /></button>
             <span className="date">{currentDay.topbar}</span>
           </div>
         </header>
@@ -692,7 +691,7 @@ export default function Home() {
         {view === "dashboard" && (
           <div className="page dashboard">
             <div className="page-heading">
-              <div><p className="kicker">COMMAND CENTER</p><h1>早安，{profile.english}</h1><p>今天也一起把重要的事，穩穩推進。</p></div>
+              <div><h1>早安，{profile.english}</h1><p>今天也一起把重要的事，穩穩推進。</p></div>
               <div className="status-pill"><span className="pulse-dot" />所有系統運作正常</div>
             </div>
 
@@ -700,7 +699,7 @@ export default function Home() {
               <div><span>今日待辦</span><b>0</b><small>項工作</small></div>
               <div><span>等待簽核</span><b>0</b><small>筆申請</small></div>
               <div><span>本月完成</span><b>0</b><small>項作業</small></div>
-              <div className="progress-block"><span>本月作業完成率</span><b>0%</b><div className="progress"><i /></div></div>
+              <div className="progress-block"><span>本月作業完成率</span><b>100%</b><div className="progress"><i /></div></div>
             </section>
 
             <div className="section-title"><div><h2>業務系統</h2><p>選擇要前往的工作區</p></div><span>{visibleServices.length} 個可用系統</span></div>
